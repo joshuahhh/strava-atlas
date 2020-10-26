@@ -1,0 +1,43 @@
+
+.Welcome {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Welcome-row {
+  display: flex;
+}
+
+@media (min-width: 551px) {
+  .Welcome-left {
+    max-width: 150px;
+    text-align: right;
+    margin-right: 30px;
+  }
+
+  .Welcome-right {
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 550px) {
+  .Welcome-row {
+    flex-direction: column;
+  }
+
+  .Welcome-left {
+    margin-bottom: 30px;
+  }
+}
+
+.Welcome-left {
+  line-height: 1;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.Welcome-right p {
+  padding-bottom: 10px;
+}

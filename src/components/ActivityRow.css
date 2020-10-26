@@ -1,0 +1,54 @@
+.ActivityRow {
+  cursor: pointer;
+  padding: 5px 10px;
+  border-bottom: 1px solid rgb(240, 240, 245);
+  display: flex;
+}
+
+.ActivityRow.hovered {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.ActivityRow.selected .ActivityRow-name {
+  font-weight: 600;
+}
+
+.ActivityRow-left {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  margin-right: 10px;
+}
+
+.ActivityRow-date, .ActivityRow-stat {
+  color: #999;
+  display: inline-block;
+  margin-right: 11px;
+}
+
+.ActivityRow-date {
+  width: 130px;
+}
+
+.ActivityRow-stat {
+  width: 50px;
+  text-align: right;
+}
+
+.ActivityRow-unit {
+  display: inline;
+  font-size: 11px;
+}
+
+.ActivityRow-strava-link {
+  visibility: hidden;
+  margin-left: 30px;
+}
+
+.ActivityRow.hovered .ActivityRow-strava-link{
+  visibility: visible;
+}
+
+.ActivityRow-strava-link-img {
+  height: 14px;
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["dom", "es2019"],
+    "strict": true,
+    "downlevelIteration": true,
+    "allowJs": true,
+    "importsNotUsedAsValues": "preserve"
+  },
+  "files": ["./main.ts"],
+  "include": ["types.d.ts"]
+}
