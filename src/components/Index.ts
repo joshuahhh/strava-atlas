@@ -58,7 +58,7 @@ const Index: m.ClosureComponent = () => {
         token = await m.request<OAuthResponse>({
           url: `/api/submit-refresh-token?refresh_token=${token.refresh_token}`,
         });
-        // TODO: ERROR HANDLING
+        // TODO: error handling
         tokenStorage.set(token);
       }
 

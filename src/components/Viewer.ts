@@ -8,6 +8,8 @@ import 'leaflet/dist/leaflet.css';
 import * as PIXI from 'pixi.js';
 import 'leaflet-pixi-overlay';
 import 'leaflet.locatecontrol';
+
+// Needed by L.Control.Locate; pretty big
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/solid.min.css';
 import 'leaflet.locatecontrol/dist/L.Control.Locate.css';
@@ -88,19 +90,18 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
 
   function actById(actId: number) { return _.find(actsS(), (act) => act.data.id === actId); }
 
-
   // Here are the layers of the map (all inside map-pane):
   //   overlay-pane
   //     targets
   //   lower tiles
-  //   pixi
+  //   pathsLayer (a PIXI overlay)
   //     allActs [filter: colorMap, allActsAlpha]
   //       {bgGraphics for each act} [filter: eachActAlpha]
   //     highlight
   //   upper tiles
 
   let map: L.Map;
-  let pixiOverlay: LeafletPixiOverlay;
+  let pathsLayer: LeafletPixiOverlay;
   let allActs = new PIXI.Container();
   let satActCount = 5;
   const eachActAlpha = new PIXI.filters.AlphaFilter(0);
@@ -130,18 +131,18 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
   let highlightChange = false;
 
 
-  let redrawScheduled = false;
-  function scheduleRedraw() {
-    if (redrawScheduled) { return; }
-    redrawScheduled = true;
+  let scheduledRedrawPathsLayer = false;
+  function scheduleRedrawPathsLayer() {
+    if (scheduledRedrawPathsLayer) { return; }
+    scheduledRedrawPathsLayer = true;
     highlightChange = true;
     requestAnimationFrame(() => {
-      redrawScheduled = false;
-      pixiOverlay.redraw();
+      scheduledRedrawPathsLayer = false;
+      pathsLayer.redraw();
     });
   }
   actsS.map(() => {
-    scheduleRedraw();
+    scheduleRedrawPathsLayer();
   });
 
 
@@ -150,7 +151,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
     if (newHoveredActId === hoveredActId) { return; }
     hoveredActId = newHoveredActId;
 
-    scheduleRedraw();
+    scheduleRedrawPathsLayer();
     m.redraw();
   }
 
@@ -158,15 +159,17 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
     const newSelectedActId = newSelectedAct?.data.id;
     selectedActId = selectedActId == newSelectedActId ? undefined : newSelectedActId;
 
-    // fly to activity, in map & table
-    const selectedAct = selectedActId && actById(selectedActId);
+    const selectedAct = selectedActId !== undefined ? actById(selectedActId) : undefined;
+    allActsAlpha.alpha = selectedAct ? 0.5 : 1;
     if (selectedAct) {
+      // fly to activity in map
       let polyline = selectedAct.targetPolyline;
       if (polyline) {
         console.log("polyline.getBounds()", JSON.stringify(polyline.getBounds()));
         map.fitBounds(polyline.getBounds());
       }
 
+      // scroll to activity in table
       let tableRow = selectedAct.tableRow;
       if (tableRow) {
         const tableRect = document.querySelector('.activities')!.getBoundingClientRect();
@@ -177,9 +180,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
       }
     }
 
-    allActsAlpha.alpha = selectedAct ? 0.5 : 1;
-
-    scheduleRedraw();
+    scheduleRedrawPathsLayer();
     m.redraw();
   }
 
@@ -193,7 +194,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
       setSelectedActivity(undefined);
     });
 
-    // zIndex values are set relative to the pixiOverlay at zIndex 0.
+    // zIndex values are set relative to the (PIXI) pathsLayer at zIndex 0.
     const attribution = '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/about-carto/">CARTO</a>';
     const ext = L.Browser.retina ? '@2x.png' : '.png';
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}' + ext, {
@@ -203,11 +204,13 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
         zIndex: 100, pane: 'mapPane', attribution,
     }).addTo(map);
 
+
+    // TODO: clean up this mess
     let actsNeedRedraw = true;
     actsS.map(() => actsNeedRedraw = true);
     let prevZoom: number | undefined = undefined;
 
-    pixiOverlay = L.pixiOverlay((utils) => {
+    pathsLayer = L.pixiOverlay((utils) => {
       const zoom = utils.getMap().getZoom();
       const container = utils.getContainer();
       const renderer = utils.getRenderer();
@@ -339,7 +342,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
                 actDataSyncS()
                 ? [
                     'Sync in progress: ',
-                    m('span.Shared-loading-progress', {style: {fontWeight: 600}}, `${actDataSyncS()!.length} activities`),
+                    m('span.Viewer-loading-progress.Shared-loading-progress', `${actDataSyncS()!.length} activities`),
                   ]
                 : [
                     `Last synced at ${new Date(syncDateS()).toLocaleString()}. `,

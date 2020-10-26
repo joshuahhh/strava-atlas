@@ -5,6 +5,7 @@ import classnames from 'classnames';
 import dayjs from 'dayjs';
 
 import { Act } from '../Act';
+import '../strava-icons.css';
 
 
 function formatDuration(secs: number) {
@@ -13,7 +14,11 @@ function formatDuration(secs: number) {
   let mPart = mins % 60;
   let hPart = Math.floor(mins / 60);
 
-  return (hPart === 0 ? '' : `${hPart}h`) + `00${mPart}m`.slice(-3);
+  if (hPart > 0) {
+    return [hPart, m('.ActivityRow-unit', 'h'), `00${mPart}`.slice(-2), m('.ActivityRow-unit', 'h')];
+  } else {
+    return [mPart, m('.ActivityRow-unit', 'm')];
+  }
 }
 
 
@@ -31,9 +36,12 @@ const ActivityRow: m.ClosureComponent<ActivityRowAttrs> = () => {
           class: classnames({hovered: isHovered, selected: isSelected}),
           ...attrs,
         },
-        m('.ActivityRow-left', {class: `app-icon icon-${act.data.type.toLowerCase()}`}),
+        m('.ActivityRow-left', {class: `app-icon icon-${act.data.type.toLowerCase()}`, title: act.data.type}),
         m('.ActivityRow-right',
-          m('.ActivityRow-name', act.data.name),
+          m('.ActivityRow-name',
+            act.data.name,
+            act.latLngs === undefined && [' ', m('span.ActivityRow-no-map', '[no map]')]
+          ),
           m('.ActivityRow-date', dayjs(act.data.start_date).format('YYYY-MM-DD dd')),
           m('.ActivityRow-stat', formatDuration(act.data.moving_time)),
           m('.ActivityRow-stat', (act.data.distance / 1609.34).toFixed(1), m('.ActivityRow-unit', 'mi')),

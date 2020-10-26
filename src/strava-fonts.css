@@ -1,0 +1,89 @@
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Book-745011ce3952aaa2bc4d1714ec74b9b2e996cce5c280c226a65849474593f53e.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Book-5c7b2e2a1fb4b41c86091ad03e996af0003b4b85e0bdb7880eb6ec62f339b79c.woff") format("woff");
+  font-weight: 400;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BookItalic-3ad4943707acbe1552785c39901d16a15e2b051b9184f703c3dc947b013b1c6f.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BookItalic-586649b51cd107d5cc72ed834aa1b64f60ef9c9c078631065677a7911ecf5286.woff") format("woff");
+  font-weight: 400;
+  font-style: italic
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Bold-22ca7df52ebdf173c771ee8fe9d74ba0388cca3146b5047e703b1228ff92830e.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Bold-a11f41cf54ef46fad7f53f8fdcba0c74dc25752b75a44f437e248f6853df3ea4.woff") format("woff");
+  font-weight: 700;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BoldItalic-fc390f34f8d4a1d561e216afcffc49ae7594df79159b6193406df69e66a7994a.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BoldItalic-672a0b49486a92fce1720f831c720889ce6de5ba119cd871e818c821df1a94c9.woff") format("woff");
+  font-weight: 700;
+  font-style: italic
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Light-a08f20b7dc2a1fdac642d921c0502bd5ceb045cf2839ee54fa726aac57ddef13.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Light-2f893cb761ef836f515c3f7d054d5c7558356a2519f2990b7b7a780ebb2d2aa3.woff") format("woff");
+  font-weight: 100;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-LightItalic-b2b26cc6da491d140576405873a96db1e930a5d1d2f50ebefa177268ec78876d.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-LightItalic-c3c5dece2a0bb8b615a53fdbffd69f67c04c9e1d521502b5f7e28ce7610d702b.woff") format("woff");
+  font-weight: 100;
+  font-style: italic
+}
+
+@font-face {
+  font-family: 'MaisonNeueExtendedDemi';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueExtended-Demi-5c14cd72d975fd967749d055aca07e39f7a437c0ef9c77f30a64d47ad9e7678e.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueExtended-Demi-192f758e6619c322c24500870688b43e106d1ac50c35502205c54e95d57cca07.woff") format("woff")
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Book-745011ce3952aaa2bc4d1714ec74b9b2e996cce5c280c226a65849474593f53e.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Book-5c7b2e2a1fb4b41c86091ad03e996af0003b4b85e0bdb7880eb6ec62f339b79c.woff") format("woff");
+  font-weight: 400;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BookItalic-3ad4943707acbe1552785c39901d16a15e2b051b9184f703c3dc947b013b1c6f.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BookItalic-586649b51cd107d5cc72ed834aa1b64f60ef9c9c078631065677a7911ecf5286.woff") format("woff");
+  font-weight: 400;
+  font-style: italic
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Bold-22ca7df52ebdf173c771ee8fe9d74ba0388cca3146b5047e703b1228ff92830e.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Bold-a11f41cf54ef46fad7f53f8fdcba0c74dc25752b75a44f437e248f6853df3ea4.woff") format("woff");
+  font-weight: 700;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BoldItalic-fc390f34f8d4a1d561e216afcffc49ae7594df79159b6193406df69e66a7994a.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-BoldItalic-672a0b49486a92fce1720f831c720889ce6de5ba119cd871e818c821df1a94c9.woff") format("woff");
+  font-weight: 700;
+  font-style: italic
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Light-a08f20b7dc2a1fdac642d921c0502bd5ceb045cf2839ee54fa726aac57ddef13.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-Light-2f893cb761ef836f515c3f7d054d5c7558356a2519f2990b7b7a780ebb2d2aa3.woff") format("woff");
+  font-weight: 100;
+  font-style: normal
+}
+
+@font-face {
+  font-family: 'MaisonNeue';
+  src: url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-LightItalic-b2b26cc6da491d140576405873a96db1e930a5d1d2f50ebefa177268ec78876d.woff2") format("woff2"), url("//d3nn82uaxijpm6.cloudfront.net/assets/maison-neue-v2/MaisonNeueWEB-LightItalic-c3c5dece2a0bb8b615a53fdbffd69f67c04c9e1d521502b5f7e28ce7610d702b.woff") format("woff");
+  font-weight: 100;
+  font-style: italic
+}

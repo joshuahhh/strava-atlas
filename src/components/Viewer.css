@@ -31,3 +31,7 @@
   font-weight: 900;
   font-style: italic;
 }
+
+.Viewer-loading-progress {
+  font-weight: 600;
+}

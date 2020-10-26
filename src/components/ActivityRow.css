@@ -20,6 +20,10 @@
   margin-right: 10px;
 }
 
+.ActivityRow-no-map {
+  font-style: italic;
+}
+
 .ActivityRow-date, .ActivityRow-stat {
   color: #999;
   display: inline-block;

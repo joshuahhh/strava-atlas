@@ -36,8 +36,18 @@
   line-height: 1;
   font-weight: 900;
   font-style: italic;
+  font-size: 300%;
 }
 
 .Welcome-right p {
   padding-bottom: 10px;
+}
+
+.Welcome-map-img {
+  width: 80%;
+}
+
+.Welcome-loading-progress {
+  font-size: 300%;
+  font-weight: 600;
 }
