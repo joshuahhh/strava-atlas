@@ -18,10 +18,6 @@
   flex-direction: column;
 }
 
-.Viewer-activities {
-  overflow: scroll;
-}
-
 .Viewer-controls {
   padding: 10px 15px;
   border-top: 1px solid rgb(240, 240, 245);

@@ -14,10 +14,13 @@ import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/solid.min.css';
 import 'leaflet.locatecontrol/dist/L.Control.Locate.css';
 
-import ActivityRow from './ActivityRow';
+import ViewerTable from './ViewerTable';
 import { StravaSummaryActivity } from '../stravaApi';
 import { Act } from '../Act';
 import { LeafletPixiOverlay } from 'leaflet-pixi-overlay';
+import { toggle } from '../shared';
+
+// const tuple = <T extends unknown[]>(...args: T) => args;
 
 PIXI.utils.skipHello();
 
@@ -71,24 +74,24 @@ function drawHighlight (gs: PIXI.Graphics, act: Act, scale: number, alpha: numbe
 const targetsRenderer = L.canvas();
 
 interface ViewerAttrs {
-  actDataS: Stream<StravaSummaryActivity[]>,
-  actDataSyncS: Stream<StravaSummaryActivity[] | undefined>,
-  syncDateS: Stream<number>,
+  actData$: Stream<StravaSummaryActivity[]>,
+  actDataSync$: Stream<StravaSummaryActivity[] | undefined>,
+  syncDate$: Stream<number>,
   sync: () => void,
 }
 const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
-  const { actDataS, actDataSyncS, syncDateS, sync } = vnode.attrs;
-  const actsS = actDataS.map((actData) =>
+  const { actData$, actDataSync$, syncDate$, sync } = vnode.attrs;
+  const acts$ = actData$.map((actData) =>
     _.chain(actData)
       .map((data) => new Act(data))
       .orderBy(['data.start_date'], ['desc'])
       .value()
   );
-  actsS.map(() => {
+  acts$.map(() => {
     m.redraw();
   });
 
-  function actById(actId: number) { return _.find(actsS(), (act) => act.data.id === actId); }
+  function actById(actId: number) { return _.find(acts$(), (act) => act.data.id === actId); }
 
   // Here are the layers of the map (all inside map-pane):
   //   overlay-pane
@@ -102,87 +105,48 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
 
   let map: L.Map;
   let pathsLayer: LeafletPixiOverlay;
-  let allActs = new PIXI.Container();
+  let allActPaths = new PIXI.Container();
   let satActCount = 5;
-  const eachActAlpha = new PIXI.filters.AlphaFilter(0);
-  actsS.map((acts) => {
-    allActs.removeChildren();
+  const eachActAlpha = new PIXI.filters.AlphaFilter(1 / satActCount);
+  acts$.map((acts) => {
+    allActPaths.removeChildren();
     acts.forEach((act) => {
       if (act.bgGraphics) {
         act.bgGraphics.filters = [ eachActAlpha ];
-        allActs.addChild(act.bgGraphics);
+        allActPaths.addChild(act.bgGraphics);
       }
     });
   });
 
-  let highlight = new PIXI.Graphics();
-
-  let pixiContainer = new PIXI.Container();
-  pixiContainer.addChild(allActs);
-  pixiContainer.addChild(highlight);
+  const pixiContainer = new PIXI.Container();
+  const hoveredActPath = new PIXI.Graphics();
+  const selectedActPath = new PIXI.Graphics();
+  pixiContainer.addChild(allActPaths);
+  pixiContainer.addChild(hoveredActPath);
+  pixiContainer.addChild(selectedActPath);
 
   const colorMap = new PIXI.Filter(undefined, colorMapFrag);
+  colorMap.uniforms.eachActAlpha = 1 / satActCount;
   const allActsAlpha = new PIXI.filters.AlphaFilter(1);
-  allActs.filters = [ colorMap, allActsAlpha ];
+  allActPaths.filters = [ colorMap, allActsAlpha ];
 
+  const hoveredActId$ = Stream<number | undefined>(undefined);
+  const selectedActId$ = Stream<number | undefined>(undefined);
 
-  let hoveredActId: number | undefined;
-  let selectedActId: number | undefined;
-  let highlightChange = false;
+  hoveredActId$.map(() => m.redraw());
+  selectedActId$.map(() => m.redraw());
 
-
-  let scheduledRedrawPathsLayer = false;
-  function scheduleRedrawPathsLayer() {
-    if (scheduledRedrawPathsLayer) { return; }
-    scheduledRedrawPathsLayer = true;
-    highlightChange = true;
-    requestAnimationFrame(() => {
-      scheduledRedrawPathsLayer = false;
-      pathsLayer.redraw();
-    });
-  }
-  actsS.map(() => {
-    scheduleRedrawPathsLayer();
-  });
-
-
-  function setHoveredActivity(newHoveredAct: Act | undefined) {
-    const newHoveredActId = newHoveredAct?.data.id;
-    if (newHoveredActId === hoveredActId) { return; }
-    hoveredActId = newHoveredActId;
-
-    scheduleRedrawPathsLayer();
-    m.redraw();
-  }
-
-  function setSelectedActivity(newSelectedAct: Act | undefined) {
-    const newSelectedActId = newSelectedAct?.data.id;
-    selectedActId = selectedActId == newSelectedActId ? undefined : newSelectedActId;
-
+  selectedActId$.map((selectedActId) => {
     const selectedAct = selectedActId !== undefined ? actById(selectedActId) : undefined;
     allActsAlpha.alpha = selectedAct ? 0.5 : 1;
     if (selectedAct) {
       // fly to activity in map
       let polyline = selectedAct.targetPolyline;
       if (polyline) {
-        console.log("polyline.getBounds()", JSON.stringify(polyline.getBounds()));
         map.fitBounds(polyline.getBounds());
       }
-
-      // scroll to activity in table
-      let tableRow = selectedAct.tableRow;
-      if (tableRow) {
-        const tableRect = document.querySelector('.activities')!.getBoundingClientRect();
-        const tableRowRect = tableRow.getBoundingClientRect();
-        if (tableRowRect.top < tableRect.top || tableRowRect.bottom > tableRect.bottom) {
-          tableRow.scrollIntoView({block: 'center', behavior: 'smooth'});
-        }
-      }
     }
-
-    scheduleRedrawPathsLayer();
-    m.redraw();
-  }
+  });
 
   let makeMap = (container: HTMLElement) => {
     map = L.map(container, { renderer: L.canvas() });
@@ -191,7 +155,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
 
     // Deselect selected activity when background is clicked
     map.on('click', () => {
-      setSelectedActivity(undefined);
+      selectedActId$(undefined);
     });
 
     // zIndex values are set relative to the (PIXI) pathsLayer at zIndex 0.
@@ -205,24 +169,43 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
     }).addTo(map);
 
 
-    // TODO: clean up this mess
-    let actsNeedRedraw = true;
-    actsS.map(() => actsNeedRedraw = true);
-    let prevZoom: number | undefined = undefined;
+    // The pathsLayer draw function has different parts which depend on different streams.
+    // This is some machinery to run these reactively.
 
+    let scheduledRedrawPathsLayer = false;
+    function scheduleRedrawPathsLayer() {
+      if (scheduledRedrawPathsLayer) { return; }
+      scheduledRedrawPathsLayer = true;
+      requestAnimationFrame(() => {
+        pathsLayer.redraw();
+        scheduledRedrawPathsLayer = false;
+      });
+    }
+
+    let actsChanged = true;
+    acts$.map(() => { actsChanged = true; scheduleRedrawPathsLayer(); });
+
+    let hoveredActIdChanged = true;
+    hoveredActId$.map(() => { hoveredActIdChanged = true; scheduleRedrawPathsLayer(); });
+
+    let selectedActIdChanged = true;
+    selectedActId$.map(() => { selectedActIdChanged = true; scheduleRedrawPathsLayer(); });
+
+    let prevZoom: number | undefined = undefined;
     pathsLayer = L.pixiOverlay((utils) => {
       const zoom = utils.getMap().getZoom();
-      const container = utils.getContainer();
       const renderer = utils.getRenderer();
       const project = utils.latLngToLayerPoint;
       const scale = utils.getScale();
 
-      if (actsNeedRedraw) {
-        actsS().forEach((act) => act.applyProjection(project));
+      const zoomChanged = prevZoom !== zoom;
+
+      if (actsChanged) {
+        acts$().forEach((act) => act.applyProjection(project));
       }
 
-      if (actsNeedRedraw || prevZoom !== zoom) {
-        actsS().forEach((act) => {
+      if (actsChanged || zoomChanged) {
+        acts$().forEach((act) => {
           if (act.bgGraphics) {
             act.bgGraphics.clear();
             act.bgGraphics.lineTextureStyle({width: 4 / scale, color: 0xFF0000, alpha: 1, join: PIXI.LINE_JOIN.BEVEL, alignment: 0.5});
@@ -231,30 +214,35 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
         });
       }
 
-      if (actsNeedRedraw || prevZoom !== zoom || highlightChange) {
-        highlight.clear();
-
+      if (hoveredActIdChanged || zoomChanged) {
+        hoveredActPath.clear();
+        const hoveredActId = hoveredActId$();
         const hoveredAct = hoveredActId && actById(hoveredActId);
         if (hoveredAct)  {
-          drawHighlight(highlight, hoveredAct,  scale, 0.5);
+          drawHighlight(hoveredActPath, hoveredAct, scale, 0.5);
         }
-        const selectedAct = selectedActId && actById(selectedActId);
-        if (selectedAct) {
-          drawHighlight(highlight, selectedAct, scale, 0.8);
-        }
-
-        highlightChange = false;
       }
 
-      actsNeedRedraw = false;
+      if (selectedActIdChanged || zoomChanged) {
+        selectedActPath.clear();
+        const selectedActId = selectedActId$();
+        const selectedAct = selectedActId && actById(selectedActId);
+        if (selectedAct)  {
+          drawHighlight(selectedActPath, selectedAct, scale, 1);
+        }
+      }
+
+      actsChanged = false;
+      hoveredActIdChanged = false;
+      selectedActIdChanged = false;
       prevZoom = zoom;
 
-      renderer.render(container);
+      renderer.render(pixiContainer);
     }, pixiContainer, {pane: 'mapPane'}).addTo(map);
 
     // Targets are not drawn, but we use them to detect mouse events on activities
     const targets = L.layerGroup().addTo(map);
-    actsS.map((acts) => {
+    acts$.map((acts) => {
       targets.clearLayers();
       acts.forEach((act) => {
         const latLngs = act.latLngs;
@@ -262,9 +250,9 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
           act.targetPolyline =
             L.polyline(latLngs, {renderer: targetsRenderer, weight: 14, opacity: 0})
               .bindTooltip(`${act.data.name} (${act.startDate.toLocaleDateString()})`, {sticky: true})
-              .on('mouseover', () => setHoveredActivity(act))
-              .on('mouseout', () => setHoveredActivity(undefined))
-              .on('click', (ev) => { setSelectedActivity(act); L.DomEvent.stop(ev); })
+              .on('mouseover', () => hoveredActId$(act.data.id))
+              .on('mouseout', () => hoveredActId$(undefined))
+              .on('click', (ev) => { toggle(selectedActId$, act.data.id); L.DomEvent.stop(ev); })
               .addTo(targets);
         }
       });
@@ -287,7 +275,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
       }
     } else {
       let bounds: L.LatLngBounds | undefined;
-      actsS().forEach((act) => {
+      acts$().forEach((act) => {
         if (!act.targetPolyline) { return; }
         const actBounds = act.targetPolyline.getBounds();
         if (bounds) {
@@ -309,43 +297,26 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = (vnode) => {
 
   return {
     view: () => {
-      eachActAlpha.alpha = 1 / satActCount;
-      colorMap.uniforms.eachActAlpha = 1 / satActCount;
-
       return [
         m('.Viewer', [
           m('.Viewer-left',
             m('.Viewer-map', {oncreate: (vnode) => makeMap(vnode.dom as HTMLElement)})
           ),
           m('.Viewer-right', [
-            m('.Viewer-activities',
-              actsS().map((act) =>
-                m(ActivityRow, {
-                  act,
-                  isHovered: act.data.id === hoveredActId,
-                  isSelected: act.data.id === selectedActId,
-                  oncreate: (vnode) => act.tableRow = vnode.dom as HTMLElement,
-                  attrs: {
-                    onmouseover: () => setHoveredActivity(act),
-                    onmouseout: () => setHoveredActivity(undefined),
-                    onclick: () => setSelectedActivity(act),
-                  },
-                }),
-              )
-            ),
+            m(ViewerTable, {acts$, hoveredActId$, selectedActId$}),
             m('.Viewer-controls',
               m('',
                 "You are using ", m('span.Viewer-strava-atlas', "Strava Atlas"), ". ",
                 "View source ", m('a', {href: 'https://github.com/joshuahhh/strava-atlas'}, 'on GitHub'), ".",
               ),
               m('',
-                actDataSyncS()
+                actDataSync$()
                 ? [
                     'Sync in progress: ',
-                    m('span.Viewer-loading-progress.Shared-loading-progress', `${actDataSyncS()!.length} activities`),
+                    m('span.Viewer-loading-progress.Shared-loading-progress', `${actDataSync$()!.length} activities`),
                   ]
                 : [
-                    `Last synced at ${new Date(syncDateS()).toLocaleString()}. `,
+                    `Last synced at ${new Date(syncDate$()).toLocaleString()}. `,
                     m('button', { onclick: sync }, 'Sync now'),
                   ]
               )

@@ -5,12 +5,12 @@ import Stream from 'mithril/stream';
 import { StravaSummaryActivity } from '../stravaApi';
 
 interface WelcomeAttrs {
-  actDataSyncS: Stream<StravaSummaryActivity[] | undefined>,
+  actDataSync$: Stream<StravaSummaryActivity[] | undefined>,
 }
 const Welcome: m.ClosureComponent<WelcomeAttrs> = () => {
   return {
-    view: ({attrs: {actDataSyncS}}) => {
-      const actDataSync = actDataSyncS();
+    view: ({attrs: {actDataSync$}}) => {
+      const actDataSync = actDataSync$();
 
       return (
         m('.Welcome',

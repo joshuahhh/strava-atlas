@@ -9,25 +9,25 @@ import { actDataStorage, syncDateStorage, tokenStorage } from '../shared';
 
 const Index: m.ClosureComponent = () => {
   // This is a stream containing a complete set of all the user's activities
-  const actDataS = Stream<StravaSummaryActivity[]>();
+  const actData$ = Stream<StravaSummaryActivity[]>();
   const actDataFromLS = actDataStorage.get();
   if (actDataFromLS) {
-    actDataS(actDataFromLS);
+    actData$(actDataFromLS);
   }
-  actDataS.map((actData) => {
+  actData$.map((actData) => {
     actDataStorage.set(actData);
   });
 
   // This is a stream containing the (possibly partial) set of activities being downloaded for the user
-  const actDataSyncS = Stream<StravaSummaryActivity[] | undefined>();
+  const actDataSync$ = Stream<StravaSummaryActivity[] | undefined>();
 
   // This is a stream containing the last sync date
-  const syncDateS = Stream<number>();
+  const syncDate$ = Stream<number>();
   const syncDateFromLS = syncDateStorage.get();
   if (syncDateFromLS) {
-    syncDateS(syncDateFromLS);
+    syncDate$(syncDateFromLS);
   }
-  syncDateS.map((syncDate) => {
+  syncDate$.map((syncDate) => {
     syncDateStorage.set(syncDate);
   });
 
@@ -43,7 +43,7 @@ const Index: m.ClosureComponent = () => {
     let token = tokenStorage.get();
     if (token) {
       // If it's been long enough, get a sync going
-      const syncDate = syncDateS();
+      const syncDate = syncDate$();
       if (!syncDate || +new Date() - syncDate > 1000 * 60 * 60) {
         sync();
       }
@@ -62,15 +62,15 @@ const Index: m.ClosureComponent = () => {
         tokenStorage.set(token);
       }
 
-      actDataSyncS([]);
+      actDataSync$([]);
       await fetchAllActivities(token.access_token, (actData) => {
-        actDataSyncS(actData);
+        actDataSync$(actData);
         m.redraw();
       });
 
-      actDataS(actDataSyncS()!);
-      actDataSyncS(undefined);
-      syncDateS(+new Date());
+      actData$(actDataSync$()!);
+      actDataSync$(undefined);
+      syncDate$(+new Date());
     } else {
       window.location.href = 'api/redirect-to-auth';
     }
@@ -79,15 +79,15 @@ const Index: m.ClosureComponent = () => {
   return {
     view: () => {
       // To test the welcome screen:
-      // return m(Welcome, {actDataSyncS: Stream() as any});
+      // return m(Welcome, {actDataSync$: Stream() as any});
 
       // To test the loading screen:
-      // return m(Welcome, {actDataSyncS: Stream([]) as any});
+      // return m(Welcome, {actDataSync$: Stream([]) as any});
 
-      if (actDataS()) {
-        return m(Viewer, {actDataS, actDataSyncS, syncDateS, sync});
+      if (actData$()) {
+        return m(Viewer, {actData$, actDataSync$, syncDate$, sync});
       } else {
-        return m(Welcome, {actDataSyncS});
+        return m(Welcome, {actDataSync$});
       }
     },
   };
