@@ -18,6 +18,7 @@ interface ViewerAttrs {
 }
 const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync$, syncDate$, sync }}) => {
   const acts$ = actData$.map((actData) => actData.map((data) => new Act(data)));
+  (window as any).acts$ = acts$;
   const filteredActs$ = Stream<Act[]>();
 
   const hoveredActId$ = Stream<number | undefined>(undefined);

@@ -24,6 +24,20 @@
   opacity: 0;
 }
 
+.ViewerTableRow-type-selector {
+  cursor: pointer;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 29px;
+  font-family: inherit;
+  font-size: 90%;
+  margin-left: -5px;
+  text-align: center;
+  text-align-last: center;
+  margin-top: 15px;
+}
+
 .ViewerTable-name-filter-container {
   position: relative
 }

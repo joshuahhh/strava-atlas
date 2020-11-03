@@ -22,6 +22,7 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
   let headerDom: HTMLElement | undefined;
   let headerOpen = false;
 
+  const typeFilter$ = Stream('All' as string);
   const nameFilter$ = Stream(undefined as string | undefined);
 
   const sort$ = Stream({column: 'date' as Column, dir: 'desc' as Dir});
@@ -32,14 +33,17 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     elevation: 'data.total_elevation_gain',
   };
 
-  const filteredActs$ = Stream.lift((acts, nameFilter) => {
+  const filteredActs$ = Stream.lift((acts, typeFilter, nameFilter) => {
     let out = acts;
+    if (typeFilter !== 'All') {
+      out = out.filter((act) => act.data.type === typeFilter);
+    }
     if (nameFilter) {
       const nameFilterLower = nameFilter.toLowerCase();
       out = out.filter((act) => act.data.name.toLowerCase().match(nameFilterLower));
     }
     return out;
-  }, acts$, nameFilter$);
+  }, acts$, typeFilter$, nameFilter$);
 
   // TODO: Kinda strange structure we have going here
   filteredActs$.map((x) => filteredActs$Out(x));
@@ -88,13 +92,28 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
 
   return {
     view: () => {
+      const types = _.chain(acts$())
+        .groupBy('data.type')
+        .toPairs()
+        .orderBy(([type, actsOfType]) => actsOfType.length, 'desc')
+        .map(([type, actsOfType]) => type)
+        .value();
+      const typeOptions = ['All', ...types];
+
       return m('.ViewerTable',
         m('.ViewerTable-header', {
           class: headerOpen ? 'ViewerTable-header-open' : 'ViewerTable-header-closed',
           oncreate: ({dom}) => headerDom = dom as HTMLElement,
         },
           m('.ViewerTable-fake-row.ViewerTableRow',
-            m('.ViewerTableRow-left', {class: `app-icon`}),
+            m('.ViewerTableRow-left',
+              m('select.ViewerTableRow-type-selector', {
+                value: typeFilter$(),
+                onchange: (ev: InputEvent) => typeFilter$(typeOptions[(ev.target as HTMLSelectElement).selectedIndex]),
+              },
+                typeOptions.map(typeOption => m('option', typeOption)),
+              )
+            ),
             m('.ViewerTableRow-right',
               m('.ViewerTableRow-name',
                 m('.ViewerTable-name-filter-container',
@@ -134,7 +153,7 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
             )
           ),
         ),
-        !nameFilter$() && (
+        typeFilter$() === 'All' && !nameFilter$() && (
           m('.ViewerTable-header-toggle', {
             class: headerOpen ? 'ViewerTable-header-toggle-close': 'ViewerTable-header-toggle-open',
             onclick: () => {
