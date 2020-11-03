@@ -2,7 +2,6 @@ import './Viewer.css';
 
 import m from 'mithril';
 import Stream from 'mithril/stream';
-import _ from 'lodash';
 
 import ViewerTable from './ViewerTable';
 import ViewerMap from './ViewerMap';
@@ -18,12 +17,8 @@ interface ViewerAttrs {
   sync: () => void,
 }
 const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync$, syncDate$, sync }}) => {
-  const acts$ = actData$.map((actData) =>
-    _.chain(actData)
-      .map((data) => new Act(data))
-      .orderBy(['data.start_date'], ['desc'])
-      .value()
-  );
+  const acts$ = actData$.map((actData) => actData.map((data) => new Act(data)));
+  const filteredActs$ = Stream<Act[]>();
 
   const hoveredActId$ = Stream<number | undefined>(undefined);
   const selectedActId$ = Stream<number | undefined>(undefined);
@@ -35,10 +30,10 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
       return [
         m('.Viewer', [
           m('.Viewer-left',
-            m(ViewerMap, {acts$, hoveredActId$, selectedActId$}),
+            m(ViewerMap, {acts$: filteredActs$, hoveredActId$, selectedActId$}),
           ),
           m('.Viewer-right', [
-            m(ViewerTable, {acts$, hoveredActId$, selectedActId$}),
+            m(ViewerTable, {acts$, hoveredActId$, selectedActId$, filteredActs$Out: filteredActs$}),
             m('.Viewer-controls',
               m('',
                 "You are using ", m('span.Viewer-strava-atlas', "Strava Atlas"), ". ",

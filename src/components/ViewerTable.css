@@ -1,3 +1,90 @@
 .ViewerTable {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ViewerTable-scroller {
   overflow: scroll;
+  flex: auto;
+}
+
+.ViewerTable-fake-row {
+  cursor: initial !important;
+}
+
+.ViewerTable-header {
+  transition: height 0.5s, opacity 0.5s;
+  height: 0;
+  flex: initial;
+}
+
+.ViewerTable-header-closed {
+  opacity: 0;
+}
+
+.ViewerTable-name-filter-container {
+  position: relative
+}
+
+.ViewerTable-name-filter {
+  margin-bottom: 10px;
+  width: 100%;
+  font-family: inherit;
+  font-size: 100%;
+}
+
+.ViewerTable-name-filter-clear {
+  cursor: pointer;
+  position: absolute;
+  right: 0px;
+  top: 2px;
+  color: #aaa;
+}
+
+.ViewerTable-name-filter-clear:before {
+  content: '✕';
+}
+
+.ViewerTable-column-label {
+  cursor: pointer;
+  display: inline-block;
+  text-transform: capitalize;
+  transform: rotate(0deg);
+  transition: transform 0.3s;
+}
+
+.ViewerTable-column-label-desc {
+  display: inline-block;
+  transform: rotate(10deg);
+}
+
+.ViewerTable-column-label-asc {
+  display: inline-block;
+  transform: rotate(-10deg);
+}
+
+.ViewerTable-header-toggle {
+  cursor: pointer;
+  position: absolute;
+  right: 20px;
+  top: 0px;
+  transform: scale(1.0, 0.7);
+}
+
+.ViewerTable-header-toggle-open:before {
+  content: '▽';
+}
+
+.ViewerTable-header-toggle-open:hover:before {
+  content: '▼';
+}
+
+.ViewerTable-header-toggle-close:before {
+  content: '△';
+}
+
+.ViewerTable-header-toggle-close:hover:before {
+  content: '▲';
 }

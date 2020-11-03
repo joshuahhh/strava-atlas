@@ -1,58 +1,58 @@
-.ActivityRow {
+.ViewerTableRow {
   cursor: pointer;
   padding: 5px 10px;
   border-bottom: 1px solid rgb(240, 240, 245);
   display: flex;
 }
 
-.ActivityRow.hovered {
+.ViewerTableRow.hovered {
   background: rgba(0, 0, 0, 0.04);
 }
 
-.ActivityRow.selected .ActivityRow-name {
+.ViewerTableRow.selected .ViewerTableRow-name {
   font-weight: 600;
 }
 
-.ActivityRow-left {
+.ViewerTableRow-left {
   width: 16px;
   min-width: 16px;
   height: 16px;
   margin-right: 10px;
 }
 
-.ActivityRow-no-map {
+.ViewerTableRow-no-map {
   font-style: italic;
 }
 
-.ActivityRow-date, .ActivityRow-stat {
+.ViewerTableRow-date, .ViewerTableRow-stat {
   color: #999;
   display: inline-block;
   margin-right: 11px;
 }
 
-.ActivityRow-date {
-  width: 130px;
+.ViewerTableRow-date {
+  width: 110px;
 }
 
-.ActivityRow-stat {
+.ViewerTableRow-stat {
   width: 50px;
   text-align: right;
 }
 
-.ActivityRow-unit {
+.ViewerTableRow-unit {
   display: inline;
   font-size: 11px;
 }
 
-.ActivityRow-strava-link {
+.ViewerTableRow-strava-link {
   visibility: hidden;
-  margin-left: 30px;
+  margin-left: 10px;
 }
 
-.ActivityRow.hovered .ActivityRow-strava-link{
+.ViewerTableRow.hovered .ViewerTableRow-strava-link{
   visibility: visible;
 }
 
-.ActivityRow-strava-link-img {
+.ViewerTableRow-strava-link-img {
   height: 14px;
 }
