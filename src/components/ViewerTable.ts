@@ -22,9 +22,9 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
   let headerDom: HTMLElement | undefined;
   let headerOpen = false;
 
-  let nameFilter$ = Stream(undefined as string | undefined);
+  const nameFilter$ = Stream(undefined as string | undefined);
 
-  let sort$ = Stream({column: 'date' as Column, dir: 'desc' as Dir});
+  const sort$ = Stream({column: 'date' as Column, dir: 'desc' as Dir});
   const columnToDataPath = {
     date: 'data.start_date',
     time: 'data.moving_time',
@@ -32,18 +32,21 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     elevation: 'data.total_elevation_gain',
   };
 
-  let filteredActs$ = Stream.lift((acts, nameFilter, sort) => {
+  const filteredActs$ = Stream.lift((acts, nameFilter) => {
     let out = acts;
     if (nameFilter) {
       const nameFilterLower = nameFilter.toLowerCase();
       out = out.filter((act) => act.data.name.toLowerCase().match(nameFilterLower));
     }
-    out = _.orderBy(out, columnToDataPath[sort.column], sort.dir);
     return out;
-  }, acts$, nameFilter$, sort$);
+  }, acts$, nameFilter$);
 
   // TODO: Kinda strange structure we have going here
   filteredActs$.map((x) => filteredActs$Out(x));
+
+  const sortedActs$ = Stream.lift((filteredActs, sort) => {
+    return _.orderBy(filteredActs, columnToDataPath[sort.column], sort.dir);
+  }, filteredActs$, sort$);
 
   function toggleSort(toggleColumn: Column) {
     const {column, dir} = sort$();
@@ -116,7 +119,7 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
         ),
         m('.ViewerTable-scroller', {oncreate: oncreateScroller},
           m('.ViewerTable-acts',
-            filteredActs$().map((act) =>
+            sortedActs$().map((act) =>
               m(ViewerTableRow, {
                 act,
                 isHovered: act.data.id === hoveredActId$(),
