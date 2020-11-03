@@ -140,7 +140,10 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
       hoveredActPath.clear();
       const hoveredAct = _.find(acts$(), (act) => act.data.id === hoveredActId$());
       if (hoveredAct)  {
-        drawHighlight(hoveredActPath, hoveredAct, scale, 0.5);
+        hoveredActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+        drawActivity(hoveredActPath, hoveredAct);
+        hoveredActPath.lineTextureStyle({width: 4 / scale, color: 0xEEEE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+        drawActivity(hoveredActPath, hoveredAct);
       }
     }
 
@@ -148,7 +151,10 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
       selectedActPath.clear();
       const selectedAct = _.find(acts$(), (act) => act.data.id === selectedActId$());
       if (selectedAct)  {
-        drawHighlight(selectedActPath, selectedAct, scale, 1);
+        selectedActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+        drawActivity(selectedActPath, selectedAct);
+        selectedActPath.lineTextureStyle({width: 4 / scale, color: 0x00EE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+        drawActivity(selectedActPath, selectedAct);
       }
     }
 
