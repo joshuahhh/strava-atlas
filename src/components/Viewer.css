@@ -7,10 +7,6 @@
   flex-grow: 1;
 }
 
-.Viewer-map {
-  height: 100%;
-}
-
 .Viewer-right {
   max-width: 30vw;
   min-width: 30vw;

@@ -5,7 +5,29 @@ import { fetchAllActivities, OAuthResponse, StravaSummaryActivity } from '../str
 import Viewer from './Viewer';
 import Welcome from './Welcome';
 
-import { actDataStorage, syncDateStorage, tokenStorage } from '../shared';
+
+class JSONStorageItem<T> {
+  constructor(readonly key: string) { }
+
+  get(): T | null {
+    const maybeStr = localStorage.getItem(this.key);
+    return maybeStr !== null ? JSON.parse(maybeStr) : null;
+  }
+  set(value: T): void {
+    this.setRaw(JSON.stringify(value));
+  }
+  setRaw(str: string): void {
+    localStorage.setItem(this.key, str);
+  }
+  remove(): void {
+    return localStorage.removeItem(this.key);
+  }
+}
+
+const actDataStorage = new JSONStorageItem<StravaSummaryActivity[]>('actData');
+const tokenStorage = new JSONStorageItem<OAuthResponse>('token');
+const syncDateStorage = new JSONStorageItem<number>('syncDate');
+
 
 const Index: m.ClosureComponent = () => {
   // This is a stream containing a complete set of all the user's activities
@@ -35,7 +57,7 @@ const Index: m.ClosureComponent = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tokenFromSP = urlParams.get('token');
   if (tokenFromSP) {
-    tokenStorage.asString().set(tokenFromSP);
+    tokenStorage.setRaw(tokenFromSP);
     window.history.replaceState({}, '', '/');
     sync();  // if we just authed, we should certainly sync
   } else {
@@ -64,6 +86,7 @@ const Index: m.ClosureComponent = () => {
 
       actDataSync$([]);
       await fetchAllActivities(token.access_token, (actData) => {
+        // This runs whenever a new page of data comes in
         actDataSync$(actData);
         m.redraw();
       });

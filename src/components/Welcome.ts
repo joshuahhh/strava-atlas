@@ -3,13 +3,16 @@ import './Welcome.css';
 import m from 'mithril';
 import Stream from 'mithril/stream';
 import { StravaSummaryActivity } from '../stravaApi';
+import { redrawOn } from '../shared';
 
 interface WelcomeAttrs {
   actDataSync$: Stream<StravaSummaryActivity[] | undefined>,
 }
-const Welcome: m.ClosureComponent<WelcomeAttrs> = () => {
+const Welcome: m.ClosureComponent<WelcomeAttrs> = ({attrs: {actDataSync$}}) => {
+  redrawOn(actDataSync$);
+
   return {
-    view: ({attrs: {actDataSync$}}) => {
+    view: () => {
       const actDataSync = actDataSync$();
 
       return (

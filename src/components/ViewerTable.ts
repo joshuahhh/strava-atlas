@@ -4,7 +4,7 @@ import m, { VnodeDOM } from 'mithril';
 import Stream from 'mithril/stream';
 import _ from 'lodash';
 
-import { toggle } from '../shared';
+import { redrawOn, toggle } from '../shared';
 import { Act } from '../Act';
 import ActivityRow from './ActivityRow';
 
@@ -13,11 +13,9 @@ interface ViewerTableAttrs {
   hoveredActId$: Stream<number | undefined>,
   selectedActId$: Stream<number | undefined>,
 }
-const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selectedActId$}}) => {
-  let scrollSub: Stream<void>;
-
+const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selectedActId$, hoveredActId$}}) => {
   function oncreate({dom}: VnodeDOM) {
-    scrollSub = selectedActId$.map((selectedActId) => {
+    selectedActId$.map((selectedActId) => {
       const selectedAct = _.find(acts$(), (act) => act.data.id === selectedActId);
       if (selectedAct) {
         // scroll to activity in table
@@ -33,13 +31,11 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     });
   }
 
-  function onremove() {
-    scrollSub.end(true);
-  }
+  redrawOn(acts$, hoveredActId$, selectedActId$);
 
   return {
-    view: ({attrs: {acts$, hoveredActId$, selectedActId$}}) => {
-      return m('.ViewerTable', {oncreate, onremove},
+    view: () => {
+      return m('.ViewerTable', {oncreate},
         acts$().map((act) =>
           m(ActivityRow, {
             act,

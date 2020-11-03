@@ -9,7 +9,7 @@ export class Act {
   startDate: Date;
   latLngs: [number, number][] | undefined;
 
-  bgGraphics: PIXI.Graphics | undefined;
+  path: PIXI.Graphics | undefined;
   targetPolyline: L.Polyline | undefined;
   tableRow: HTMLElement | undefined;
   projectedPoints: {x: number, y: number}[] | undefined;
@@ -36,8 +36,6 @@ export class Act {
       }
 
       this.latLngs = latLngs;
-
-      this.bgGraphics = new PIXI.Graphics();
     }
   }
 
