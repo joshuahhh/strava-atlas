@@ -48,13 +48,6 @@ function drawActivity (gs: PIXI.Graphics, act: Act) {
   }
 }
 
-function drawHighlight (gs: PIXI.Graphics, act: Act, scale: number, alpha: number) {
-  gs.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5, alpha});
-  drawActivity(gs, act);
-  gs.lineTextureStyle({width: 2 / scale, color: 0x00EE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5, alpha});
-  drawActivity(gs, act);
-}
-
 
 interface PathsLayerArgs {
   acts$: Stream<Act[]>,
