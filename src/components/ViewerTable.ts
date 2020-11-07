@@ -159,7 +159,6 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
             onclick: () => {
               headerOpen = !headerOpen;
               if (headerDom) {
-                console.log('setting height to', (headerOpen ? headerDom.scrollHeight : 0));
                 headerDom.style.height = (headerOpen ? headerDom.scrollHeight : 0) + 'px';
               }
             },
