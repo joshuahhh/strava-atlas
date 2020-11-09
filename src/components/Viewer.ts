@@ -8,6 +8,7 @@ import ViewerMap from './ViewerMap';
 import { StravaSummaryActivity } from '../stravaApi';
 import { Act } from '../Act';
 import { redrawOn } from '../shared';
+import _ from 'lodash';
 
 
 interface ViewerAttrs {
@@ -23,6 +24,18 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
 
   const hoveredActId$ = Stream<number | undefined>(undefined);
   const selectedActId$ = Stream<number | undefined>(undefined);
+
+  // A funny case: if the hovered/selected act is filtered out, it should be de-hovered/selected
+  filteredActs$.map((filteredActs) => {
+    const hoveredActId = hoveredActId$();
+    if (!_.find(filteredActs, (act) => act.data.id === hoveredActId)) {
+      hoveredActId$(undefined);
+    }
+    const selectedActId = selectedActId$();
+    if (!_.find(filteredActs, (act) => act.data.id === selectedActId)) {
+      selectedActId$(undefined);
+    }
+  });
 
   redrawOn(actDataSync$, syncDate$);
 
