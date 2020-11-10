@@ -8,9 +8,12 @@ const PROD = process.env.NODE_ENV === 'production';
 
 module.exports = {
     mode: process.env.NODE_ENV,
-    entry: _.compact([ './src/main.ts', !PROD && 'webpack-hot-middleware/client?reload=true' ]),
+    entry: {
+        main: _.compact([ './src/main.ts', !PROD && 'webpack-hot-middleware/client?reload=true' ]),
+        hub: _.compact([ './src/hub.ts', !PROD && 'webpack-hot-middleware/client?reload=true' ]),
+    },
     output: {
-        filename: 'js/app.js',
+        filename: 'js/[name].js',
         path: resolve(__dirname, 'public'),
     },
     devtool: PROD ? 'source-map' : 'eval-cheap-source-map',

@@ -406,6 +406,11 @@
   resolved "https://registry.yarnpkg.com/@types/color-name/-/color-name-1.1.1.tgz#1c1261bbeaa10a8055bbc5d8ab84b7b2afc846a0"
   integrity sha512-rr+OQyAjxze7GgWrSaJwydHStIhHq2lvY3BOC2Mj7KnzI7XK0Uw1TOOdI9lDoajEbSWLiYgoo4f1R51erQfhPQ==
 
+"@types/cross-storage@^0.8.29":
+  version "0.8.29"
+  resolved "https://registry.yarnpkg.com/@types/cross-storage/-/cross-storage-0.8.29.tgz#eeee26736b0a4a01e7067277c2d62275e0039d0b"
+  integrity sha1-7u4mc2sKSgHnBnJ3wtYideADnQs=
+
 "@types/geojson@*":
   version "7946.0.7"
   resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.7.tgz#c8fa532b60a0042219cdf173ca21a975ef0666ad"
@@ -1551,6 +1556,11 @@ cross-spawn@^7.0.0, cross-spawn@^7.0.2:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
     which "^2.0.1"
+
+cross-storage@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/cross-storage/-/cross-storage-1.0.0.tgz#70950377241484f17ce9559b05d2e08448e17660"
+  integrity sha1-cJUDdyQUhPF86VWbBdLghEjhdmA=
 
 crypto-browserify@^3.11.0:
   version "3.12.0"

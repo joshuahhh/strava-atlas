@@ -5,4 +5,4 @@ import './strava-fonts.css';
 import m from 'mithril';
 import Index from './components/Index';
 
-m.mount(document.body, Index);
+m.mount(document.getElementById('root')!, Index);
