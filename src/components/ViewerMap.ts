@@ -69,13 +69,13 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
       if (hoveredActs.length === 0) {
         map.closeTooltip(tooltip);
       } else {
-        if (hoveredActs.length === 1) {
-          const act = hoveredActs[0];
-          tooltip.setContent(`${act.data.name} (${act.startDate.toLocaleDateString()})`);
-        } else {
-          tooltip.setContent(`${hoveredActs.length} activities`);
-        }
-
+        const listedActs = hoveredActs.slice(0, 2);
+        const numUnlistedActs = hoveredActs.length - 2;
+        const tooltipContent = listedActs
+           .map((act) => `${act.data.name} (${act.startDate.toLocaleDateString()})`)
+           .join("<br/>")
+           + (numUnlistedActs > 0 ? `<br/>… and ${numUnlistedActs} more` : '');
+        tooltip.setContent(tooltipContent);
         tooltip.setLatLng(ev.latlng);
         map.openTooltip(tooltip);
       }
