@@ -24,6 +24,8 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
   let headerDom: HTMLElement | undefined;
   let headerOpen = false;
 
+  let mouseIsHovering = false;
+
   const typeFilter$ = Stream('All' as string);
   const nameFilter$ = Stream(undefined as string | undefined);
 
@@ -141,11 +143,12 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
                 act,
                 isVisible: visibleActs$().includes(act),
                 isHovered: hoveredActIds$().includes(act.data.id),
+                isHoveredDirectly: hoveredActIds$().includes(act.data.id) && mouseIsHovering,
                 isSelected: act.data.id === selectedActId$(),
                 oncreate: (vnode) => act.tableRow = vnode.dom as HTMLElement,
                 attrs: {
-                  onmouseover: () => hoveredActIds$([act.data.id]),
-                  onmouseout: () => hoveredActIds$([]),
+                  onmouseover: () => { mouseIsHovering = true; hoveredActIds$([act.data.id]); },
+                  onmouseout: () => { mouseIsHovering = false; hoveredActIds$([]); },
                   onclick: () => toggle(selectedActId$, act.data.id),
                 },
               }),

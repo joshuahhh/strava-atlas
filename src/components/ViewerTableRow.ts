@@ -26,15 +26,16 @@ interface ViewerTableRowAttrs {
   act: Act,
   isVisible: boolean,
   isHovered: boolean,
+  isHoveredDirectly: boolean,
   isSelected: boolean,
   attrs: m.Attributes,
 }
 const ViewerTableRow: m.ClosureComponent<ViewerTableRowAttrs> = () => {
   return {
-    view: ({attrs: {act, isVisible, isHovered, isSelected, attrs}}) => {
+    view: ({attrs: {act, isVisible, isHovered, isHoveredDirectly, isSelected, attrs}}) => {
       return m('.ViewerTableRow',
         {
-          class: classnames({invisible: !isVisible, hovered: isHovered, selected: isSelected}),
+          class: classnames({invisible: !isVisible, hovered: isHovered, "hovered-directly": isHoveredDirectly, selected: isSelected}),
           ...attrs,
         },
         m('.ViewerTableRow-left', {class: `app-icon icon-${act.data.type.toLowerCase()}`, title: act.data.type}),

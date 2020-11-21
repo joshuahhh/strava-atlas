@@ -50,7 +50,7 @@
   margin-left: 10px;
 }
 
-.ViewerTableRow.hovered .ViewerTableRow-strava-link{
+.ViewerTableRow.hovered-directly .ViewerTableRow-strava-link{
   visibility: visible;
 }
 
