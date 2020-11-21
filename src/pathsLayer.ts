@@ -129,14 +129,16 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
     }
 
     if (hoveredActIdsChanged || zoomChanged) {
-      hoveredActPath.clear();
-      const hoveredActs = visibleActs$().filter((act) => hoveredActIds$().includes(act.data.id));
-      hoveredActs.forEach((hoveredAct) => {
-        hoveredActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-        drawActivity(hoveredActPath, hoveredAct);
-        hoveredActPath.lineTextureStyle({width: 4 / scale, color: 0xEEEE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-        drawActivity(hoveredActPath, hoveredAct);
-      });
+      if (hoveredActIds$().length < 200) {
+        hoveredActPath.clear();
+        const hoveredActs = visibleActs$().filter((act) => hoveredActIds$().includes(act.data.id));
+        hoveredActs.forEach((hoveredAct) => {
+          hoveredActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+          drawActivity(hoveredActPath, hoveredAct);
+          hoveredActPath.lineTextureStyle({width: 4 / scale, color: 0xEEEE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
+          drawActivity(hoveredActPath, hoveredAct);
+        });
+      }
     }
 
     if (selectedActIdChanged || zoomChanged) {
