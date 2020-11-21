@@ -8,7 +8,6 @@ import ViewerMap from './ViewerMap';
 import { StravaSummaryActivity } from '../stravaApi';
 import { Act } from '../Act';
 import { redrawOn } from '../shared';
-import _ from 'lodash';
 
 
 interface ViewerAttrs {
@@ -18,21 +17,39 @@ interface ViewerAttrs {
   sync: () => void,
 }
 const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync$, syncDate$, sync }}) => {
+  // Modes:
+  //   Viewing all acts
+  //   Viewing acts filtered by table filters
+  //   Viewing specific set of acts defined by a multiclick
+  // So we're choosing to TURN OFF all table filtering when there's a multiselection
+
   const acts$ = actData$.map((actData) => actData.map((data) => new Act(data)));
   (window as any).acts$ = acts$;
   const filteredActs$ = Stream<Act[]>();
 
-  const hoveredActId$ = Stream<number | undefined>(undefined);
+  const hoveredActIds$ = Stream<number[]>([]);
+  const multiselectedActIds$ = Stream<number[]>([]);
   const selectedActId$ = Stream<number | undefined>(undefined);
 
-  // A funny case: if the hovered/selected act is filtered out, it should be de-hovered/selected
-  filteredActs$.map((filteredActs) => {
-    const hoveredActId = hoveredActId$();
-    if (!_.find(filteredActs, (act) => act.data.id === hoveredActId)) {
-      hoveredActId$(undefined);
+  let visibleActs$ = Stream.lift((filteredActs, multiselectedActIds) => {
+    if (multiselectedActIds.length > 0) {
+      return filteredActs.filter((act) => multiselectedActIds.includes(act.data.id));
+    } else {
+      return filteredActs;
     }
+  }, filteredActs$, multiselectedActIds$);
+
+  // A funny case: if the selected act is filtered out, it should be de-hovered/selected
+  filteredActs$.map((filteredActs) => {
+    const filteredHoveredActIds = hoveredActIds$().filter((hoveredActId) =>
+      filteredActs.find((act) => act.data.id === hoveredActId)
+    );
+    if (filteredHoveredActIds.length !== hoveredActIds$().length) {
+      hoveredActIds$(filteredHoveredActIds);
+    }
+
     const selectedActId = selectedActId$();
-    if (!_.find(filteredActs, (act) => act.data.id === selectedActId)) {
+    if (!filteredActs.find((act) => act.data.id === selectedActId)) {
       selectedActId$(undefined);
     }
   });
@@ -44,10 +61,10 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
       return [
         m('.Viewer', [
           m('.Viewer-left',
-            m(ViewerMap, {acts$: filteredActs$, hoveredActId$, selectedActId$}),
+            m(ViewerMap, {visibleActs$, hoveredActIds$, multiselectedActIds$, selectedActId$}),
           ),
           m('.Viewer-right', [
-            m(ViewerTable, {acts$, hoveredActId$, selectedActId$, filteredActs$Out: filteredActs$}),
+            m(ViewerTable, {acts$, hoveredActIds$, multiselectedActIds$, selectedActId$, filteredActs$, visibleActs$}),
             m('.Viewer-controls',
               m('',
                 "You are using ", m('span.Viewer-strava-atlas', "Strava Atlas"), ". ",

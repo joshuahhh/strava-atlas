@@ -1,5 +1,4 @@
 import Stream from 'mithril/stream';
-import _ from 'lodash';
 
 import { Act } from './Act';
 
@@ -36,7 +35,7 @@ void main(void){
 `;
 
 function drawActivity (gs: PIXI.Graphics, act: Act) {
-  const projectedPoints = act.projectedPoints;
+  const projectedPoints = act.projPoints;
   if (projectedPoints) {
     projectedPoints.forEach((coords, i) => {
       if (i === 0) {
@@ -50,11 +49,11 @@ function drawActivity (gs: PIXI.Graphics, act: Act) {
 
 
 interface PathsLayerArgs {
-  acts$: Stream<Act[]>,
-  hoveredActId$: Stream<number | undefined>,
+  visibleActs$: Stream<Act[]>,
+  hoveredActIds$: Stream<number[]>,
   selectedActId$: Stream<number | undefined>,
 }
-export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: PathsLayerArgs): L.Layer {
+export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$}: PathsLayerArgs): L.Layer {
   let satActCount = 5;
 
   const pixiContainer = new PIXI.Container();
@@ -63,7 +62,7 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
   pixiContainer.addChild(allActPaths);
 
   const eachActAlphaFilter = new PIXI.filters.AlphaFilter(1 / satActCount);
-  acts$.map((acts) => {
+  visibleActs$.map((acts) => {
     allActPaths.removeChildren();
     acts.forEach((act) => {
       if (!act.path) {
@@ -100,9 +99,9 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
     });
   }
   let actsChanged = true;
-  acts$.map(() => { actsChanged = true; scheduleRedrawPathsLayer(); });
+  visibleActs$.map(() => { actsChanged = true; scheduleRedrawPathsLayer(); });
   let hoveredActIdChanged = true;
-  hoveredActId$.map(() => { hoveredActIdChanged = true; scheduleRedrawPathsLayer(); });
+  hoveredActIds$.map(() => { hoveredActIdChanged = true; scheduleRedrawPathsLayer(); });
   let selectedActIdChanged = true;
   selectedActId$.map(() => { selectedActIdChanged = true; scheduleRedrawPathsLayer(); });
 
@@ -116,11 +115,11 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
     const zoomChanged = prevZoom !== zoom;
 
     if (actsChanged) {
-      acts$().forEach((act) => act.applyProjection(project));
+      visibleActs$().forEach((act) => act.applyProjection(project, utils.getScale));
     }
 
     if (actsChanged || zoomChanged) {
-      acts$().forEach((act) => {
+      visibleActs$().forEach((act) => {
         if (act.path) {
           act.path.clear();
           act.path.lineTextureStyle({width: 4 / scale, color: 0xFF0000, alpha: 1, join: PIXI.LINE_JOIN.BEVEL, alignment: 0.5});
@@ -131,18 +130,18 @@ export default function pathsLayer({acts$, hoveredActId$, selectedActId$}: Paths
 
     if (hoveredActIdChanged || zoomChanged) {
       hoveredActPath.clear();
-      const hoveredAct = _.find(acts$(), (act) => act.data.id === hoveredActId$());
-      if (hoveredAct)  {
+      const hoveredActs = visibleActs$().filter((act) => hoveredActIds$().includes(act.data.id));
+      hoveredActs.forEach((hoveredAct) => {
         hoveredActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
         drawActivity(hoveredActPath, hoveredAct);
         hoveredActPath.lineTextureStyle({width: 4 / scale, color: 0xEEEE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
         drawActivity(hoveredActPath, hoveredAct);
-      }
+      });
     }
 
     if (selectedActIdChanged || zoomChanged) {
       selectedActPath.clear();
-      const selectedAct = _.find(acts$(), (act) => act.data.id === selectedActId$());
+      const selectedAct = visibleActs$().find((act) => act.data.id === selectedActId$());
       if (selectedAct)  {
         selectedActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
         drawActivity(selectedActPath, selectedAct);

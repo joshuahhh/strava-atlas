@@ -2,7 +2,6 @@ import './ViewerMap.css';
 
 import m, { VnodeDOM } from 'mithril';
 import Stream from 'mithril/stream';
-import _ from 'lodash';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.locatecontrol';
@@ -12,18 +11,18 @@ import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/solid.min.css';
 import 'leaflet.locatecontrol/dist/L.Control.Locate.css';
 
-import { toggle } from '../shared';
 import { Act } from '../Act';
 import pathsLayer from '../pathsLayer';
 
 
 
 interface ViewerMapAttrs {
-  acts$: Stream<Act[]>,
-  hoveredActId$: Stream<number | undefined>,
+  visibleActs$: Stream<Act[]>,
+  hoveredActIds$: Stream<number[]>,
+  multiselectedActIds$: Stream<number[]>,
   selectedActId$: Stream<number | undefined>,
 }
-const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {acts$, selectedActId$, hoveredActId$}}) => {
+const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, selectedActId$, multiselectedActIds$, hoveredActIds$}}) => {
   function oncreate({dom}: VnodeDOM) {
     const map = L.map(dom as HTMLElement, { renderer: L.canvas() });
 
@@ -47,45 +46,67 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {acts$, selectedA
       zIndex: 100, pane: 'mapPane', attribution,
     }).addTo(map);
 
-    pathsLayer({acts$, selectedActId$, hoveredActId$}).addTo(map);
-
-    // Targets are invisible, but we use them to detect mouse events on activities
-    const targets = L.layerGroup().addTo(map);
-    const targetsRenderer = L.canvas();
-    acts$.map((acts) => {
-      targets.clearLayers();
-      acts.forEach((act) => {
-        const latLngs = act.latLngs;
-        if (latLngs) {
-          act.targetPolyline =
-            L.polyline(latLngs, {renderer: targetsRenderer, weight: 14, opacity: 0})
-              .bindTooltip(`${act.data.name} (${act.startDate.toLocaleDateString()})`, {sticky: true})
-              .on('mouseover', () => hoveredActId$(act.data.id))
-              .on('mouseout', () => hoveredActId$(undefined))
-              .on('click', (ev) => { toggle(selectedActId$, act.data.id); L.DomEvent.stop(ev); })
-              .addTo(targets);
-        }
-      });
-    });
+    pathsLayer({visibleActs$, selectedActId$, hoveredActIds$}).addTo(map);
 
 
     // ************
     // INTERACTIONS
     // ************
 
+    const tooltip = L.tooltip();
+
+    map.on('mousemove', (ev: L.LeafletMouseEvent) => {
+      const projectedPt = map.getPixelOrigin().add(ev.layerPoint);
+
+      // Determine the hovered acts
+      const hoveredActs = visibleActs$().filter((act) =>
+        // act.targetPolyline && (act.targetPolyline as any)._containsPoint(ev.layerPoint)
+        act.containsProjectedPoint(projectedPt, 7, map.getZoom())
+      );
+      hoveredActIds$(hoveredActs.map((act) => act.data.id));
+
+      // Manage the tooltip
+      if (hoveredActs.length === 0) {
+        map.closeTooltip(tooltip);
+      } else {
+        if (hoveredActs.length === 1) {
+          const act = hoveredActs[0];
+          tooltip.setContent(`${act.data.name} (${act.startDate.toLocaleDateString()})`);
+        } else {
+          tooltip.setContent(`${hoveredActs.length} activities`);
+        }
+
+        tooltip.setLatLng(ev.latlng);
+        map.openTooltip(tooltip);
+      }
+
+      // TODO: Set cursor
+    });
+
     // Deselect selected activity when background is clicked
     map.on('click', () => {
-      selectedActId$(undefined);
+      const hoveredActIds = hoveredActIds$();
+      if (hoveredActIds.length === 0) {
+        if (selectedActId$()) {
+          selectedActId$(undefined);
+        } else if (multiselectedActIds$().length > 0) {
+          multiselectedActIds$([]);
+        }
+      } else if (hoveredActIds.length === 1) {
+        selectedActId$(visibleActs$().find((act) => act.data.id === hoveredActIds[0])?.data.id);
+      } else {
+        multiselectedActIds$(hoveredActIds);
+      }
+      m.redraw();
     });
 
     // Fly to an activity if it is selected
     selectedActId$.map((selectedActId) => {
-      const selectedAct = _.find(acts$(), (act) => act.data.id === selectedActId);
+      const selectedAct = visibleActs$().find((act) => act.data.id === selectedActId);
       if (selectedAct) {
         // fly to activity in map
-        let polyline = selectedAct.targetPolyline;
-        if (polyline) {
-          map.fitBounds(polyline.getBounds());
+        if (selectedAct.latLngs) {
+          map.fitBounds(selectedAct.latLngs);
         }
       }
     });
@@ -106,13 +127,12 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {acts$, selectedA
       }
     } else {
       let bounds: L.LatLngBounds | undefined;
-      acts$().forEach((act) => {
-        if (!act.targetPolyline) { return; }
-        const actBounds = act.targetPolyline.getBounds();
+      visibleActs$().forEach((act) => {
+        if (!act.latLngs) { return; }
         if (bounds) {
-          bounds.extend(actBounds);
+          bounds.extend(act.latLngs);
         } else {
-          bounds = actBounds;
+          bounds = L.latLngBounds(act.latLngs);
         }
       });
 

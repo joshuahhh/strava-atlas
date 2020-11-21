@@ -14,11 +14,13 @@ type Dir = 'asc' | 'desc';
 
 interface ViewerTableAttrs {
   acts$: Stream<Act[]>,
-  filteredActs$Out: Stream<Act[]>,
-  hoveredActId$: Stream<number | undefined>,
+  filteredActs$: Stream<Act[]>,
+  visibleActs$: Stream<Act[]>,
+  hoveredActIds$: Stream<number[]>,
+  multiselectedActIds$: Stream<number[]>,
   selectedActId$: Stream<number | undefined>,
 }
-const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selectedActId$, hoveredActId$, filteredActs$Out}}) => {
+const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selectedActId$, hoveredActIds$, filteredActs$, visibleActs$}}) => {
   let headerDom: HTMLElement | undefined;
   let headerOpen = false;
 
@@ -33,7 +35,8 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     elevation: 'data.total_elevation_gain',
   };
 
-  const filteredActs$ = Stream.lift((acts, typeFilter, nameFilter) => {
+  // TODO: Kinda strange structure we have going here
+  Stream.lift((acts, typeFilter, nameFilter) => {
     let out = acts;
     if (typeFilter !== 'All') {
       out = out.filter((act) => act.data.type === typeFilter);
@@ -42,15 +45,12 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
       const nameFilterLower = nameFilter.toLowerCase();
       out = out.filter((act) => act.data.name.toLowerCase().match(nameFilterLower));
     }
-    return out;
+    filteredActs$(out);
   }, acts$, typeFilter$, nameFilter$);
 
-  // TODO: Kinda strange structure we have going here
-  filteredActs$.map((x) => filteredActs$Out(x));
-
-  const sortedActs$ = Stream.lift((filteredActs, sort) => {
-    return _.orderBy(filteredActs, columnToDataPath[sort.column], sort.dir);
-  }, filteredActs$, sort$);
+  const sortedVisibleActs$ = Stream.lift((visibleActs, sort) => {
+    return _.orderBy(visibleActs, columnToDataPath[sort.column], sort.dir);
+  }, visibleActs$, sort$);
 
   function toggleSort(toggleColumn: Column) {
     const {column, dir} = sort$();
@@ -63,12 +63,10 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
 
   function oncreateScroller({dom}: VnodeDOM) {
     selectedActId$.map((selectedActId) => {
-      console.log('act changed');
-      const selectedAct = _.find(acts$(), (act) => act.data.id === selectedActId);
+      const selectedAct = acts$().find((act) => act.data.id === selectedActId);
       if (selectedAct) {
         // scroll to activity in table
         let tableRow = selectedAct.tableRow;
-        console.log('scrolling', tableRow);
         if (tableRow) {
           const tableScrollerRect = dom.getBoundingClientRect();
           const tableRowRect = tableRow.getBoundingClientRect();
@@ -88,15 +86,15 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     }, column);
   }
 
-  redrawOn(filteredActs$, hoveredActId$, selectedActId$, sort$);
+  redrawOn(filteredActs$, hoveredActIds$, selectedActId$, sort$);
 
   return {
     view: () => {
       const types = _.chain(acts$())
         .groupBy('data.type')
         .toPairs()
-        .orderBy(([type, actsOfType]) => actsOfType.length, 'desc')
-        .map(([type, actsOfType]) => type)
+        .orderBy(([_type, actsOfType]) => actsOfType.length, 'desc')
+        .map(([type, _actsOfType]) => type)
         .value();
       const typeOptions = ['All', ...types];
 
@@ -138,15 +136,15 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
         ),
         m('.ViewerTable-scroller', {oncreate: oncreateScroller},
           m('.ViewerTable-acts',
-            sortedActs$().map((act) =>
+            sortedVisibleActs$().map((act) =>
               m(ViewerTableRow, {
                 act,
-                isHovered: act.data.id === hoveredActId$(),
+                isHovered: hoveredActIds$().includes(act.data.id),
                 isSelected: act.data.id === selectedActId$(),
                 oncreate: (vnode) => act.tableRow = vnode.dom as HTMLElement,
                 attrs: {
-                  onmouseover: () => hoveredActId$(act.data.id),
-                  onmouseout: () => hoveredActId$(undefined),
+                  onmouseover: () => hoveredActIds$([act.data.id]),
+                  onmouseout: () => hoveredActIds$([]),
                   onclick: () => toggle(selectedActId$, act.data.id),
                 },
               }),

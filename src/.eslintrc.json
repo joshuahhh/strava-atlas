@@ -24,6 +24,7 @@
         "delimiter": "comma",
         "requireLast": false
       }
-    }]
+    }],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
   }
 }
