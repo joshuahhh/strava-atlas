@@ -24,16 +24,17 @@ function formatDuration(secs: number) {
 
 interface ViewerTableRowAttrs {
   act: Act,
+  isVisible: boolean,
   isHovered: boolean,
   isSelected: boolean,
   attrs: m.Attributes,
 }
 const ViewerTableRow: m.ClosureComponent<ViewerTableRowAttrs> = () => {
   return {
-    view: ({attrs: {act, isHovered, isSelected, attrs}}) => {
+    view: ({attrs: {act, isVisible, isHovered, isSelected, attrs}}) => {
       return m('.ViewerTableRow',
         {
-          class: classnames({hovered: isHovered, selected: isSelected}),
+          class: classnames({invisible: !isVisible, hovered: isHovered, selected: isSelected}),
           ...attrs,
         },
         m('.ViewerTableRow-left', {class: `app-icon icon-${act.data.type.toLowerCase()}`, title: act.data.type}),

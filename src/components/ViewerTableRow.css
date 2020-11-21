@@ -5,6 +5,10 @@
   display: flex;
 }
 
+.ViewerTableRow.invisible {
+  display: none;
+}
+
 .ViewerTableRow.hovered {
   background: rgba(0, 0, 0, 0.04);
 }

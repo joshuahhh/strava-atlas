@@ -48,9 +48,9 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     filteredActs$(out);
   }, acts$, typeFilter$, nameFilter$);
 
-  const sortedVisibleActs$ = Stream.lift((visibleActs, sort) => {
-    return _.orderBy(visibleActs, columnToDataPath[sort.column], sort.dir);
-  }, visibleActs$, sort$);
+  const sortedActs$ = Stream.lift((acts, sort) => {
+    return _.orderBy(acts, columnToDataPath[sort.column], sort.dir);
+  }, acts$, sort$);
 
   function toggleSort(toggleColumn: Column) {
     const {column, dir} = sort$();
@@ -136,9 +136,10 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
         ),
         m('.ViewerTable-scroller', {oncreate: oncreateScroller},
           m('.ViewerTable-acts',
-            sortedVisibleActs$().map((act) =>
+            sortedActs$().map((act) =>
               m(ViewerTableRow, {
                 act,
+                isVisible: visibleActs$().includes(act),
                 isHovered: hoveredActIds$().includes(act.data.id),
                 isSelected: act.data.id === selectedActId$(),
                 oncreate: (vnode) => act.tableRow = vnode.dom as HTMLElement,
