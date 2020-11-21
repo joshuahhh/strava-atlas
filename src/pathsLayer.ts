@@ -100,8 +100,8 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
   }
   let actsChanged = true;
   visibleActs$.map(() => { actsChanged = true; scheduleRedrawPathsLayer(); });
-  let hoveredActIdChanged = true;
-  hoveredActIds$.map(() => { hoveredActIdChanged = true; scheduleRedrawPathsLayer(); });
+  let hoveredActIdsChanged = true;
+  hoveredActIds$.map(() => { hoveredActIdsChanged = true; scheduleRedrawPathsLayer(); });
   let selectedActIdChanged = true;
   selectedActId$.map(() => { selectedActIdChanged = true; scheduleRedrawPathsLayer(); });
 
@@ -128,7 +128,7 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
       });
     }
 
-    if (hoveredActIdChanged || zoomChanged) {
+    if (hoveredActIdsChanged || zoomChanged) {
       hoveredActPath.clear();
       const hoveredActs = visibleActs$().filter((act) => hoveredActIds$().includes(act.data.id));
       hoveredActs.forEach((hoveredAct) => {
@@ -151,7 +151,7 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
     }
 
     actsChanged = false;
-    hoveredActIdChanged = false;
+    hoveredActIdsChanged = false;
     selectedActIdChanged = false;
     prevZoom = zoom;
 
