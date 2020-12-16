@@ -59,7 +59,7 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
         className: 'ViewerMap-marker-start',
         iconSize: [12, 12],
       }),
-      zIndexOffset: 2,
+      zIndexOffset: 20000,  // needs to be large to overcome latitude-based zIndex
     }).addTo(map);
     const endMarker = L.marker([0, 0], {
       opacity: 0, interactive: false,
@@ -68,7 +68,7 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
         html: '<div class="ViewerMap-marker-end-child"/>',
         iconSize: [12, 12],
       }),
-      zIndexOffset: 1,
+      zIndexOffset: 10000,
     }).addTo(map);
 
     selectedActId$.map((selectedActId) => {
