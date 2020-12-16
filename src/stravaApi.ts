@@ -2,8 +2,8 @@ import m from 'mithril';
 
 export interface StravaPolylineMap {
   id: string,
-  polyline: string,  // not sure about this! missing from summary
-  summary_polyline: string,
+  polyline: string | null,
+  summary_polyline: string | null,
 }
 
 export enum StravaActivityType {
@@ -54,8 +54,8 @@ export interface StravaSummaryActivity {
   start_date: Date,
   start_date_local: Date,
   timezone: string,
-  start_latlng: number[],
-  end_latlng: number[],
+  start_latlng: [number, number] | null,
+  end_latlng: [number, number] | null,
   achievement_count: number,
   kudos_count: number,
   comment_count: number,

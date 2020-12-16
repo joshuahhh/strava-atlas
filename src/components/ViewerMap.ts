@@ -36,17 +36,56 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
     const attribution = '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/about-carto/">CARTO</a>';
     const ext = L.Browser.retina ? '@2x.png' : '.png';
 
-    // zIndex values are set relative to the (PIXI) pathsLayer at zIndex 0.
+    // zIndex values are set relative to the (PIXI) pathsLayer at zIndex 0 and the markers layer at zIndex 600.
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}' + ext, {
       zIndex: -100, pane: 'mapPane', attribution,
     }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}' + ext, {
-      zIndex: 100, pane: 'mapPane', attribution,
+      zIndex: 700, pane: 'mapPane', attribution,
     }).addTo(map);
 
     pathsLayer({visibleActs$, selectedActId$, hoveredActIds$}).addTo(map);
+
+
+    // *******
+    // MARKERS
+    // *******
+
+    const startMarker = L.marker([0, 0], {
+      opacity: 0, interactive: false,
+      icon: L.divIcon({
+        className: 'ViewerMap-marker-start',
+        iconSize: [12, 12],
+      }),
+      zIndexOffset: 2,
+    }).addTo(map);
+    const endMarker = L.marker([0, 0], {
+      opacity: 0, interactive: false,
+      icon: L.divIcon({
+        className: 'ViewerMap-marker-end',
+        html: '<div class="ViewerMap-marker-end-child"/>',
+        iconSize: [12, 12],
+      }),
+      zIndexOffset: 1,
+    }).addTo(map);
+
+    selectedActId$.map((selectedActId) => {
+      const selectedAct = visibleActs$().find((act) => act.data.id === selectedActId);
+      if (selectedAct && selectedAct.data.start_latlng) {
+        startMarker.setLatLng(selectedAct.data.start_latlng);
+        startMarker.setOpacity(1);
+      } else {
+        startMarker.setOpacity(0);
+      }
+      if (selectedAct && selectedAct.data.end_latlng) {
+        endMarker.setLatLng(selectedAct.data.end_latlng);
+        endMarker.setOpacity(1);
+      } else {
+        endMarker.setOpacity(0);
+      }
+    });
 
 
     // ************
