@@ -39,17 +39,17 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
     }
   }, filteredActs$, multiselectedActIds$);
 
-  // A funny case: if the selected act is filtered out, it should be de-hovered/selected
-  filteredActs$.map((filteredActs) => {
-    const filteredHoveredActIds = hoveredActIds$().filter((hoveredActId) =>
-      filteredActs.find((act) => act.data.id === hoveredActId)
+  // A funny case: if a hovered/selected act is made invisible, it should be de-hovered/selected
+  visibleActs$.map((visibleActs) => {
+    const visibleHoveredActIds = hoveredActIds$().filter((hoveredActId) =>
+      visibleActs.find((act) => act.data.id === hoveredActId)
     );
-    if (filteredHoveredActIds.length !== hoveredActIds$().length) {
-      hoveredActIds$(filteredHoveredActIds);
+    if (visibleHoveredActIds.length !== hoveredActIds$().length) {
+      hoveredActIds$(visibleHoveredActIds);
     }
 
     const selectedActId = selectedActId$();
-    if (!filteredActs.find((act) => act.data.id === selectedActId)) {
+    if (!visibleActs.find((act) => act.data.id === selectedActId)) {
       selectedActId$(undefined);
     }
   });
