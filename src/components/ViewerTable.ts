@@ -103,6 +103,10 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
       return m('.ViewerTable',
         m('.ViewerTable-header', {
           class: headerOpen ? 'ViewerTable-header-open' : 'ViewerTable-header-closed',
+          style: {
+            height: headerDom && `${headerOpen ? headerDom.scrollHeight : 0}px`,
+            top: headerDom && `${headerOpen ? 0 : -headerDom.scrollHeight}px`,
+          },
           oncreate: ({dom}) => headerDom = dom as HTMLElement,
         },
           m('.ViewerTable-fake-row.ViewerTableRow',
@@ -158,12 +162,7 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
         typeFilter$() === 'All' && !nameFilter$() && (
           m('.ViewerTable-header-toggle', {
             class: headerOpen ? 'ViewerTable-header-toggle-close': 'ViewerTable-header-toggle-open',
-            onclick: () => {
-              headerOpen = !headerOpen;
-              if (headerDom) {
-                headerDom.style.height = (headerOpen ? headerDom.scrollHeight : 0) + 'px';
-              }
-            },
+            onclick: () => { headerOpen = !headerOpen; },
           })
         )
       );

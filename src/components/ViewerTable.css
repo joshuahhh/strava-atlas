@@ -15,14 +15,8 @@
 }
 
 .ViewerTable-header {
-  transition: height 0.5s, opacity 0.5s;
-  height: 0;
-  flex: initial;
-}
-
-.ViewerTable-header-closed {
-  opacity: 0;
-  pointer-events: none;
+  position: relative;
+  transition: top 0.5s, height 0.5s;
 }
 
 .ViewerTableRow-type-selector {
