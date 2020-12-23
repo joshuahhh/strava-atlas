@@ -30,7 +30,7 @@ void main(void){
   if (eachActAlpha < 1.0) {
     val = val / (1.0 - eachActAlpha);
   }
-  gl_FragColor = colormap(val * 0.75) * newAlpha;
+  gl_FragColor = colormap(val * 0.6) * newAlpha;
 }
 `;
 
