@@ -51,7 +51,7 @@ The <a href="https://github.com/zendesk/cross-storage">`cross-storage` library</
 
     ```
     localStorage.crossStoragePermissions = JSON.stringify([
-        {origin: '^joshuahhh.static.observableusercontent.com$', allow: ['get']}
+        {origin: '^https://joshuahhh\\.static\\.observableusercontent\\.com$', allow: ['get']}
     ])
     ```
 
