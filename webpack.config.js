@@ -21,10 +21,6 @@ module.exports = {
         extensions: [".ts", ".js", ".json"],
 
         alias: {
-            // incorporates https://github.com/pixijs/pixi.js/pull/6928
-            // built from https://github.com/pixijs/pixi.js#10983e29
-            'pixi.js': resolve(__dirname, 'vendor/pixi.min.mjs'),
-
             // incorporates https://github.com/Leaflet/Leaflet/pull/6522
             // built from https://github.com/joshuahhh/Leaflet.git#2b8c9865
             'leaflet$': resolve(__dirname, 'vendor/leaflet-src.js'),
