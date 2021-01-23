@@ -8,6 +8,7 @@ import * as PIXI from 'pixi.js';
 
 
 PIXI.utils.skipHello();
+PIXI.settings.FILTER_RESOLUTION = L.Browser.retina ? 2 : 1;
 
 const colorMapFrag = `
 varying vec2 vTextureCoord;
