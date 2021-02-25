@@ -66,19 +66,19 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
   function oncreateScroller({dom}: VnodeDOM) {
     // when a new activity is selected, scroll to it in the table
     selectedActId$.map((selectedActId) => {
-      console.log("scrolling 1");
+      console.log("2021-02: scrolling 1");
       if (!selectedActId) { return; }
-      console.log("scrolling 2");
+      console.log("2021-02: scrolling 2");
       const selectedAct = acts$().find((act) => act.data.id === selectedActId);
       if (!selectedAct) { return; }
-      console.log("scrolling 3");
+      console.log("2021-02: scrolling 3");
       let tableRow = selectedAct.tableRow;
       if (!tableRow) { return; }
-      console.log("scrolling 4");
+      console.log("2021-02: scrolling 4");
       const tableScrollerRect = dom.getBoundingClientRect();
       const tableRowRect = tableRow.getBoundingClientRect();
       if (tableRowRect.top >= tableScrollerRect.top && tableRowRect.bottom <= tableScrollerRect.bottom) { return; }
-      console.log("scrolling 5");
+      console.log("2021-02: scrolling 5");
       tableRow.scrollIntoView({block: 'center', behavior: 'smooth'});
     });
   }
@@ -152,7 +152,6 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
                 isHovered: hoveredActIds$().includes(act.data.id),
                 isHoveredDirectly: hoveredActIds$().includes(act.data.id) && mouseIsHovering,
                 isSelected: act.data.id === selectedActId$(),
-                oncreate: (vnode) => act.tableRow = vnode.dom as HTMLElement,
                 attrs: {
                   onmouseover: () => { mouseIsHovering = true; hoveredActIds$([act.data.id]); },
                   onmouseout: () => { mouseIsHovering = false; hoveredActIds$([]); },
