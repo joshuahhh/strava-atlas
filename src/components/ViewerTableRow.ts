@@ -15,7 +15,7 @@ function formatDuration(secs: number) {
   let hPart = Math.floor(mins / 60);
 
   if (hPart > 0) {
-    return [hPart, m('.ViewerTableRow-unit', 'h'), `00${mPart}`.slice(-2), m('.ViewerTableRow-unit', 'h')];
+    return [hPart, m('.ViewerTableRow-unit', 'h'), `00${mPart}`.slice(-2), m('.ViewerTableRow-unit', 'm')];
   } else {
     return [mPart, m('.ViewerTableRow-unit', 'm')];
   }
