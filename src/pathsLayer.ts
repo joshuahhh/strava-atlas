@@ -119,15 +119,25 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
       visibleActs$().forEach((act) => act.applyProjection(project, utils.getScale));
     }
 
-    if (actsChanged || zoomChanged) {
-      visibleActs$().forEach((act) => {
-        if (act.path) {
-          act.path.clear();
-          act.path.lineTextureStyle({width: 4 / scale, color: 0xFF0000, alpha: 1, join: PIXI.LINE_JOIN.BEVEL, alignment: 0.5});
-          drawActivity(act.path, act);
+    // bounds-based culling
+    const mapBounds = utils.getMap().getBounds();
+    const mapBoundsProj = L.bounds(project(mapBounds.getSouthWest()), project(mapBounds.getNorthEast()));
+    visibleActs$().forEach((act) => {
+      if (act.path) {
+        if (act.projBounds && mapBoundsProj.overlaps(act.projBounds) && act.projPoints?.some(p => mapBoundsProj.contains(p))) {
+          act.path.visible = true;
+
+          if (act.pathZoom !== zoom) {
+            act.pathZoom = zoom;
+            act.path.clear();
+            act.path.lineTextureStyle({width: 4 / scale, color: 0xFF0000, alpha: 1, join: PIXI.LINE_JOIN.BEVEL, alignment: 0.5});
+            drawActivity(act.path, act);
+          }
+        } else {
+          act.path.visible = false;
         }
-      });
-    }
+      }
+    });
 
     if (hoveredActIdsChanged || zoomChanged) {
       if (hoveredActIds$().length < 200) {

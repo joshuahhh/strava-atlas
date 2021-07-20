@@ -13,6 +13,7 @@ export class Act {
   latLngs: [number, number][] | undefined;
 
   path: PIXI.Graphics | undefined;
+  pathZoom: number | undefined;
   tableRow: HTMLElement | undefined;
 
   // the latLngs get projected at a particular initial zoom level
