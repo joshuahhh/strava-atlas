@@ -94,7 +94,15 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
 
     const tooltip = L.tooltip();
 
+    let panOrZoomInProgress = false;
+    map.on('movestart', () => { panOrZoomInProgress = true; });
+    map.on('moveend', () => { panOrZoomInProgress = false; });
+    map.on('zoomstart', () => { panOrZoomInProgress = true; });
+    map.on('zoomend', () => { panOrZoomInProgress = false; });
+
     map.on('mousemove', (ev: L.LeafletMouseEvent) => {
+      if (panOrZoomInProgress) { return; }
+
       const projectedPt = map.getPixelOrigin().add(ev.layerPoint);
 
       // Determine the hovered acts
