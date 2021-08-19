@@ -45,7 +45,10 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     }
     if (nameFilter) {
       const nameFilterLower = nameFilter.toLowerCase();
-      out = out.filter((act) => act.data.name.toLowerCase().match(nameFilterLower));
+      const nameFilterLowerPieces = nameFilterLower.split(' ');
+      out = out.filter((act) =>
+        nameFilterLowerPieces.every((piece) =>
+          act.data.name.toLowerCase().includes(piece)));
     }
     filteredActs$(out);
   }, acts$, typeFilter$, nameFilter$);
