@@ -36,14 +36,19 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
     const attribution = '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/about-carto/">CARTO</a>';
     const ext = L.Browser.retina ? '@2x.png' : '.png';
 
-    // zIndex values are set relative to the (PIXI) pathsLayer at zIndex 0 and the markers layer at zIndex 600.
+    // zIndex values:
+    //  -100 - base map nolabels
+    //     0 - pathsLayer (from PIXI)
+    //   600 - markers (ViewerMap-marker-start & ViewerMap-marker-end)
+    //   625 - base map only_labels
+    //   650 - tooltips
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}' + ext, {
       zIndex: -100, pane: 'mapPane', attribution,
     }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}' + ext, {
-      zIndex: 700, pane: 'mapPane', attribution,
+      zIndex: 625, pane: 'mapPane', attribution,
     }).addTo(map);
 
     pathsLayer({visibleActs$, selectedActId$, hoveredActIds$}).addTo(map);
