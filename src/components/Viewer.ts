@@ -15,7 +15,7 @@ interface ViewerAttrs {
   actData$: Stream<StravaSummaryActivity[]>,
   actDataSync$: Stream<StravaSummaryActivity[] | undefined>,
   syncDate$: Stream<number>,
-  sync: () => void,
+  sync: (params: {fromScratch: boolean}) => void,
 }
 const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync$, syncDate$, sync }}) => {
   // Modes:
@@ -89,7 +89,13 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
                   ]
                 : [
                     `Last synced at ${new Date(syncDate$()).toLocaleString()}. `,
-                    m('button', { onclick: sync }, 'Sync now'),
+                    m('button', { onclick: () => sync({fromScratch: false}) }, 'Sync now'),
+                    m('details.Viewer-advanced-details',
+                      m('summary', 'Advanced'),
+                      m('.Viewer-advanced-controls',
+                        m('button', { onclick: () => sync({fromScratch: true}) }, 'Sync from scratch'),
+                      )
+                    ),
                   ]
               )
             ),

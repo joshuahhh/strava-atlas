@@ -80,13 +80,13 @@ export interface OAuthResponse {
   expires_at: number,
 }
 
-export async function fetchAllActivities(access_token: string, onProgress?: (actData: StravaSummaryActivity[]) => void, per_page = 50): Promise<StravaSummaryActivity[]> {
+export async function fetchActivities(access_token: string, onProgress?: (actData: StravaSummaryActivity[]) => void, per_page = 50, after?: number): Promise<StravaSummaryActivity[]> {
   let actData = [];
   let page = 1;
   let actDataBatch;
   do {
     actDataBatch = await m.request<StravaSummaryActivity[]>({
-      url: `https://www.strava.com/api/v3/athlete/activities?per_page=${per_page}&page=${page}`,
+      url: `https://www.strava.com/api/v3/athlete/activities?per_page=${per_page}&page=${page}` + (after ? `&after=${after}` : ''),
       headers: {'Authorization': `Bearer ${access_token}`},
     });
     actData.push(...actDataBatch);

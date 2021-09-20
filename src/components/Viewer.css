@@ -27,3 +27,11 @@
 .Viewer-loading-progress {
   font-weight: 600;
 }
+
+.Viewer-advanced-details[open] {
+  margin-top: 10px;
+}
+
+.Viewer-advanced-controls {
+  padding-left: 15px;
+}

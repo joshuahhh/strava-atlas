@@ -1,8 +1,9 @@
+import _ from 'lodash';
 import m from 'mithril';
 import Stream from 'mithril/stream';
 
 import JSONStorageItem from '../JSONStorageItem';
-import { fetchAllActivities, OAuthResponse, StravaSummaryActivity } from '../stravaApi';
+import { fetchActivities, OAuthResponse, StravaSummaryActivity } from '../stravaApi';
 import Viewer from './Viewer';
 import Welcome from './Welcome';
 
@@ -14,13 +15,15 @@ const syncDateStorage = new JSONStorageItem<number>('syncDate');
 
 const Index: m.ClosureComponent = () => {
   // This is a stream containing a complete set of all the user's activities
-  const actData$ = Stream<StravaSummaryActivity[]>();
+  const actData$ = Stream<StravaSummaryActivity[] | undefined>(undefined);
   const actDataFromLS = actDataStorage.get();
   if (actDataFromLS) {
     actData$(actDataFromLS);
   }
   actData$.map((actData) => {
-    actDataStorage.set(actData);
+    if (actData) {
+      actDataStorage.set(actData);
+    }
   });
 
   // This is a stream containing the (possibly partial) set of activities being downloaded for the user
@@ -42,7 +45,7 @@ const Index: m.ClosureComponent = () => {
   if (tokenFromSP) {
     tokenStorage.setRaw(tokenFromSP);
     window.history.replaceState({}, '', '/');
-    sync();  // if we just authed, we should certainly sync
+    sync({fromScratch: true});  // if we just authed, we should certainly sync
   } else {
     // Try using token in LS
     let token = tokenStorage.get();
@@ -50,12 +53,12 @@ const Index: m.ClosureComponent = () => {
       // If it's been long enough, get a sync going
       const syncDate = syncDate$();
       if (!syncDate || +new Date() - syncDate > 1000 * 60 * 60) {
-        sync();
+        sync({fromScratch: false});
       }
     }
   }
 
-  async function sync() {
+  async function sync({fromScratch}: {fromScratch: boolean}) {
     let token = tokenStorage.get();
     if (token) {
       // Refresh the token if necessary
@@ -67,12 +70,25 @@ const Index: m.ClosureComponent = () => {
         tokenStorage.set(token);
       }
 
-      actDataSync$([]);
-      await fetchAllActivities(token.access_token, (actData) => {
-        // This runs whenever a new page of data comes in
+      let afterTime: number | undefined = undefined;
+      let actData = actData$();
+      if (!fromScratch && actData && actData.length > 0) {
         actDataSync$(actData);
+        const times = actData.map((act) => +new Date(act.start_date) / 1000);
+        afterTime = _.max(times);
+      } else {
+        actDataSync$([]);
+      }
+
+      await fetchActivities(token.access_token, (newActData) => {
+        // This runs whenever a new page of data comes in
+        if (fromScratch) {
+          actDataSync$(newActData);
+        } else {
+          actDataSync$([...actData$() || [], ...newActData]);
+        }
         m.redraw();
-      });
+      }, undefined, afterTime);
 
       actData$(actDataSync$()!);
       actDataSync$(undefined);
@@ -91,7 +107,7 @@ const Index: m.ClosureComponent = () => {
       // return m(Welcome, {actDataSync$: Stream([]) as any});
 
       if (actData$()) {
-        return m(Viewer, {actData$, actDataSync$, syncDate$, sync});
+        return m(Viewer, {actData$: actData$ as Stream<StravaSummaryActivity[]>, actDataSync$, syncDate$, sync});
       } else {
         return m(Welcome, {actDataSync$});
       }
