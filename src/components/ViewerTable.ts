@@ -14,13 +14,12 @@ type Dir = 'asc' | 'desc';
 
 interface ViewerTableAttrs {
   acts$: Stream<Act[]>,
-  filteredActs$: Stream<Act[]>,
+  filterFromTable$: Stream<(acts: Act) => boolean>,
   visibleActs$: Stream<Act[]>,
   hoveredActIds$: Stream<number[]>,
-  multiselectedActIds$: Stream<number[]>,
   selectedActId$: Stream<number | undefined>,
 }
-const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selectedActId$, hoveredActIds$, filteredActs$, visibleActs$}}) => {
+const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, filterFromTable$, selectedActId$, hoveredActIds$, visibleActs$}}) => {
   let headerDom: HTMLElement | undefined;
   let headerOpen = false;
 
@@ -38,20 +37,22 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
   };
 
   // TODO: Kinda strange structure we have going here
-  Stream.lift((acts, typeFilter, nameFilter) => {
-    let out = acts;
-    if (typeFilter !== 'All') {
-      out = out.filter((act) => act.data.type === typeFilter);
-    }
-    if (nameFilter) {
-      const nameFilterLower = nameFilter.toLowerCase();
-      const nameFilterLowerPieces = nameFilterLower.split(' ');
-      out = out.filter((act) =>
-        nameFilterLowerPieces.every((piece) =>
-          act.data.name.toLowerCase().includes(piece)));
-    }
-    filteredActs$(out);
-  }, acts$, typeFilter$, nameFilter$);
+  Stream.lift((typeFilter, nameFilter) => {
+    const nameFilterLowerPieces = nameFilter ? nameFilter.toLowerCase().split(' ') : undefined;
+
+    filterFromTable$(act => {
+      if (typeFilter !== 'All' && act.data.type !== typeFilter) {
+        return false;
+      }
+      if (nameFilterLowerPieces) {
+        const nameLower = act.data.name.toLowerCase();
+        if (!nameFilterLowerPieces.every(piece => nameLower.includes(piece))) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, typeFilter$, nameFilter$);
 
   const sortedActs$ = Stream.lift((acts, sort) => {
     return _.orderBy(acts, columnToDataPath[sort.column], sort.dir);
@@ -94,7 +95,7 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, selec
     }, column);
   }
 
-  redrawOn(filteredActs$, hoveredActIds$, selectedActId$, sort$);
+  redrawOn(hoveredActIds$, selectedActId$, sort$);
 
   return {
     view: () => {

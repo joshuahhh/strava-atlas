@@ -26,19 +26,22 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
 
   const acts$ = actData$.map((actData) => actData.map((data) => new Act(data)));
   (window as any).acts$ = acts$;
-  const filteredActs$ = Stream<Act[]>();
 
   const hoveredActIds$ = Stream<number[]>([]);
   const multiselectedActIds$ = Stream<number[]>([]);
   const selectedActId$ = Stream<number | undefined>(undefined);
 
-  let visibleActs$ = Stream.lift((filteredActs, multiselectedActIds) => {
+  const filterFromTable$ = Stream<(acts: Act) => boolean>(() => true);
+
+  const visibleActs$ = Stream.lift((acts, filterFromTable, multiselectedActIds) => {
+    const filteredActs = acts.filter(filterFromTable);
+
     if (multiselectedActIds.length > 0) {
       return filteredActs.filter((act) => multiselectedActIds.includes(act.data.id));
     } else {
       return filteredActs;
     }
-  }, filteredActs$, multiselectedActIds$);
+  }, acts$, filterFromTable$, multiselectedActIds$);
 
   // A funny case: if a hovered/selected act is made invisible, it should be de-hovered/selected
   visibleActs$.map((visibleActs) => {
@@ -72,7 +75,7 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
             m(ViewerMap, {visibleActs$, hoveredActIds$, multiselectedActIds$, selectedActId$}),
           ),
           m('.Viewer-right', [
-            m(ViewerTable, {acts$, hoveredActIds$, multiselectedActIds$, selectedActId$, filteredActs$, visibleActs$}),
+            m(ViewerTable, {acts$, filterFromTable$, hoveredActIds$, selectedActId$, visibleActs$}),
             m('.Viewer-controls',
               m('',
                 "You are using ", m('span.Viewer-strava-atlas', "Strava Atlas"), ". ",
