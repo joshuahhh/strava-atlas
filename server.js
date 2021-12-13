@@ -3,13 +3,16 @@
   const fetch = require('node-fetch');
   const FormData = require('form-data');
   const { inspect } = require('util');
+  const fs = require('fs');
 
   require('dotenv').config()
   const {STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET} = process.env;
   if (!STRAVA_CLIENT_ID) { throw "STRAVA_CLIENT_ID missing from env"; }
   if (!STRAVA_CLIENT_SECRET) { throw "STRAVA_CLIENT_SECRET missing from env"; }
 
-
+  const indexTemplate = fs.readFileSync('public/index-template.html').toString();
+  const index = indexTemplate.replace('<!-- EXTRA_HEAD -->', process.env.EXTRA_HEAD || '');
+  fs.writeFileSync('public/index.html', index);
 
   function addSearchParamsFromPairs(url, pairs) {
     const searchParams = url.searchParams;
@@ -46,6 +49,7 @@
   } else {
     if (!PORT) {
       console.error('running in production mode, but no PORT env variable! exiting')
+      console.error('  [ did you mean to `yarn dev`? ]')
       process.exit(1)
     }
     console.log(`running in production mode on ${PORT}`);
