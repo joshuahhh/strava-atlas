@@ -1,5 +1,6 @@
 (async () => {
   const express = require('express');
+  const compression = require('compression')
   const fetch = require('node-fetch');
   const FormData = require('form-data');
   const { inspect } = require('util');
@@ -31,6 +32,8 @@
 
 
   const app = express();
+
+  app.use(compression());
 
   app.enable('trust proxy')  // for herokuapp.com
 

@@ -27,8 +27,8 @@ const Welcome: m.ClosureComponent<WelcomeAttrs> = ({attrs: {actDataSync$}}) => {
               )
             : m('.Welcome-right',
                 m('p', 'A free third-party tool which draws all your activities onto a single explorable map.'),
-                m('p', m('a', {href: 'api/redirect-to-auth'}, m('img', {src: 'btn_strava_connectwith_orange@2x.png', width: 193}))),
-                m('p', m('img.Welcome-map-img', {src: 'map.png'})),
+                m('p', m('a', {href: 'api/redirect-to-auth'}, m('img', {src: 'btn_strava_connectwith_orange@2x.png', alt: 'Connect with Strava', width: 193}))),
+                m('p', m('img.Welcome-map-img', {src: 'map.png', alt: 'Screenshot of Strava Atlas, showing map'})),
                 m('p', 'Your Strava data will not leave your browser.'),
                 m('p', 'This is an open-source project. Find out more ', m('a', {href: 'https://github.com/joshuahhh/strava-atlas'}, 'on GitHub'), '!'),
               )
