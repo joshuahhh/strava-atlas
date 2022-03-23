@@ -14,7 +14,6 @@ export class Act {
 
   path: PIXI.Graphics | undefined;
   pathZoom: number | undefined;
-  tableRow: HTMLElement | undefined;
 
   // the latLngs get projected at a particular initial zoom level
   // so these are in "initial-zoom pixels"

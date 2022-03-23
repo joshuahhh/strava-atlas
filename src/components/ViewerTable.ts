@@ -70,19 +70,15 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, filte
   function oncreateScroller({dom}: VnodeDOM) {
     // when a new activity is selected, scroll to it in the table
     selectedActId$.map((selectedActId) => {
-      console.log("2021-02: scrolling 1");
       if (!selectedActId) { return; }
-      console.log("2021-02: scrolling 2");
-      const selectedAct = acts$().find((act) => act.data.id === selectedActId);
-      if (!selectedAct) { return; }
-      console.log("2021-02: scrolling 3");
-      let tableRow = selectedAct.tableRow;
-      if (!tableRow) { return; }
-      console.log("2021-02: scrolling 4");
+      let tableRow = document.getElementById(`ViewerTableRow-${selectedActId}`);
+      if (!tableRow) {
+        console.warn("cannot find table row for ", selectedActId);
+        return;
+      }
       const tableScrollerRect = dom.getBoundingClientRect();
       const tableRowRect = tableRow.getBoundingClientRect();
       if (tableRowRect.top >= tableScrollerRect.top && tableRowRect.bottom <= tableScrollerRect.bottom) { return; }
-      console.log("2021-02: scrolling 5");
       tableRow.scrollIntoView({block: 'center', behavior: 'smooth'});
     });
   }

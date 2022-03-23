@@ -32,13 +32,10 @@ interface ViewerTableRowAttrs {
 }
 const ViewerTableRow: m.ClosureComponent<ViewerTableRowAttrs> = () => {
   return {
-    oncreate: ({dom, attrs: {act}}) => {
-      console.log('2021-02: setting tableRow');
-      act.tableRow = dom as HTMLElement;
-    },
     view: ({attrs: {act, isVisible, isHovered, isHoveredDirectly, isSelected, attrs}}) => {
       return m('.ViewerTableRow',
         {
+          id: `ViewerTableRow-${act.data.id}`,
           class: classnames({invisible: !isVisible, hovered: isHovered, "hovered-directly": isHoveredDirectly, selected: isSelected}),
           ...attrs,
         },
