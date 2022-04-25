@@ -14,6 +14,18 @@
   flex-direction: column;
 }
 
+@media (orientation: portrait) {
+  .Viewer {
+    flex-direction: column;
+  }
+
+  .Viewer-right {
+    max-width: none;
+    min-width: none;
+    max-height: 40vh;
+  }
+}
+
 .Viewer-controls {
   padding: 10px 15px;
   border-top: 1px solid rgb(240, 240, 245);

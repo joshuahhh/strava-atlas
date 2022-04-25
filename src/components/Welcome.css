@@ -30,6 +30,16 @@
   .Welcome-left {
     margin-bottom: 30px;
   }
+
+  .Welcome {
+    height: initial;
+    padding: 10px;
+  }
+
+  /* hack */
+  #root {
+    overflow: auto;
+  }
 }
 
 .Welcome-left {
