@@ -24,7 +24,7 @@ interface ViewerMapAttrs {
 }
 const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, selectedActId$, multiselectedActIds$, hoveredActIds$}}) => {
   function oncreate({dom}: VnodeDOM) {
-    const map = L.map(dom as HTMLElement, { renderer: L.canvas() });
+    const map = L.map(dom as HTMLElement, { renderer: L.canvas(), tap: true });
 
     L.control.locate({ drawCircle: false }).addTo(map);  // HACK: drawCircle is disabled because it blocks other mouse events
 
@@ -105,17 +105,26 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
     map.on('zoomstart', () => { panOrZoomInProgress = true; });
     map.on('zoomend', () => { panOrZoomInProgress = false; });
 
-    map.on('mousemove', (ev: L.LeafletMouseEvent) => {
-      if (panOrZoomInProgress) { return; }
+    let mouseHasMoved = false;  // if this stays false, we're on a touch-only platform
 
+    function refreshHoveredActIds (ev: L.LeafletMouseEvent) {
       const projectedPt = map.getPixelOrigin().add(ev.layerPoint);
 
       // Determine the hovered acts
       const hoveredActs = visibleActs$().filter((act) =>
-        // act.targetPolyline && (act.targetPolyline as any)._containsPoint(ev.layerPoint)
         act.containsProjectedPoint(projectedPt, 7, map.getZoom())
       );
       hoveredActIds$(hoveredActs.map((act) => act.data.id));
+
+      return hoveredActs;
+    }
+
+    map.on('mousemove', (ev: L.LeafletMouseEvent) => {
+      if (panOrZoomInProgress) { return; }
+
+      mouseHasMoved = true;
+
+      const hoveredActs = refreshHoveredActIds(ev);
 
       // Manage the tooltip
       if (hoveredActs.length === 0) {
@@ -136,7 +145,11 @@ const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, se
     });
 
     // Deselect selected activity when background is clicked
-    map.on('click', () => {
+    map.on('click', (ev: L.LeafletMouseEvent) => {
+      if (!mouseHasMoved) {
+        refreshHoveredActIds(ev);
+      }
+
       const hoveredActIds = hoveredActIds$();
       if (hoveredActIds.length === 0) {
         if (selectedActId$()) {
