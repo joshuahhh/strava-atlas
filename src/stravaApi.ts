@@ -62,7 +62,7 @@ export interface StravaSummaryActivity {
   athlete_count: number,
   photo_count: number,
   total_photo_count: number,
-  map: StravaPolylineMap,
+  map: StravaPolylineMap | null,
   trainer: boolean,
   commute: boolean,
   manual: boolean,

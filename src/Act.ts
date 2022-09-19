@@ -25,7 +25,7 @@ export class Act {
   constructor(public data: StravaSummaryActivity) {
     this.startDate = new Date(data.start_date);
 
-    const polyline = data.map.summary_polyline;
+    const polyline = data.map?.summary_polyline;
     if (polyline) {
       let latLngs = mbPolyline.decode(polyline) as [number, number][];  // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/48644
 
