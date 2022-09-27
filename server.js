@@ -73,24 +73,28 @@
   });
 
   app.get('/api/receive-auth-code', async (req, res) => {
-    const authCode = req.query.code;
-    const resp = await fetch('https://www.strava.com/oauth/token', {
-      method: 'POST',
-      body: formDataFromPairs({
-        grant_type: 'authorization_code',
-        client_id: STRAVA_CLIENT_ID,
-        client_secret: STRAVA_CLIENT_SECRET,
-        code: authCode,
-      })
-    })
-    let token = await resp.json();
-
-    delete token.athlete;
-
     let redirectURL = new URL(`${req.protocol}://${req.headers.host}/`);
-    addSearchParamsFromPairs(redirectURL, {
-      token: JSON.stringify(token),
-    });
+
+    const authCode = req.query.code;
+    if (authCode) {
+      const resp = await fetch('https://www.strava.com/oauth/token', {
+        method: 'POST',
+        body: formDataFromPairs({
+          grant_type: 'authorization_code',
+          client_id: STRAVA_CLIENT_ID,
+          client_secret: STRAVA_CLIENT_SECRET,
+          code: authCode,
+        })
+      })
+      let token = await resp.json();
+
+      delete token.athlete;
+
+      addSearchParamsFromPairs(redirectURL, {
+        token: JSON.stringify(token),
+      });
+    }
+
     res.redirect(redirectURL.toString());
   });
 
