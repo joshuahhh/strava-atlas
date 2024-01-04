@@ -5,3 +5,4 @@ npm-debug.log
 /public/index.html
 yarn-error.log
 .env
+.vscode

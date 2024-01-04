@@ -82,8 +82,8 @@ export class Act {
         return true;
       }
     }
-		return false;
-	}
+    return false;
+  }
 }
 
 function padBounds(bounds: L.Bounds, padding: number) {
