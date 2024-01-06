@@ -7,6 +7,7 @@ import _ from 'lodash';
 import { redrawOn, toggle } from '../shared';
 import { Act } from '../Act';
 import ViewerTableRow from './ViewerTableRow';
+import { saveFile, actsToGeoJSON, actsToGPX, actsToKML } from '../export';
 
 
 type Column = 'date' | 'time' | 'distance' | 'elevation';
@@ -21,7 +22,7 @@ interface ViewerTableAttrs {
 }
 const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, filterFromTable$, selectedActId$, hoveredActIds$, visibleActs$}}) => {
   let headerDom: HTMLElement | undefined;
-  let headerOpen = false;
+  let headerOpen = true;
 
   let mouseIsHovering = false;
 
@@ -142,6 +143,36 @@ const ViewerTable: m.ClosureComponent<ViewerTableAttrs> = ({attrs: {acts$, filte
               m('.ViewerTableRow-stat', columnLabel('elevation')),
             ),
           ),
+          m('select.ViewerTable-header-download-selector', {
+            value: '⤓',
+            onchange: (ev: InputEvent) => {
+              const format = (ev.target as HTMLSelectElement).value;
+              (ev.target as HTMLSelectElement).value = '⤓';
+
+              const acts = visibleActs$();
+              if (acts.length === 0) { return; }
+
+              let contents: string;
+              if (format === 'json') {
+                contents = JSON.stringify(actsToGeoJSON(acts), null, 2);
+              } else if (format === 'gpx') {
+                contents = actsToGPX(acts);
+              } else if (format === 'kml') {
+                contents = actsToKML(acts);
+              } else {
+                console.warn("unknown format: ", format);
+                return;
+              }
+              saveFile(new Blob([contents], {type: 'text/plain'}), `activities.${format}`);
+            },
+          },
+            m('option', {disabled: true}, '⤓'),
+            m('option', {disabled: true}, 'Download'),
+            m('option', {value: 'json'}, '... as GeoJSON'),
+            m('option', {value: 'gpx'}, '... as GPX'),
+            m('option', {value: 'kml'}, '... as KML'),
+            // typeOptions.map(typeOption => m('option', typeOption)),
+          )
         ),
         m('.ViewerTable-scroller', {oncreate: oncreateScroller},
           m('.ViewerTable-acts',

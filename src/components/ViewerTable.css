@@ -17,6 +17,8 @@
 .ViewerTable-header {
   position: relative;
   transition: top 0.5s, height 0.5s;
+  display: flex;
+  align-items: flex-start;
 }
 
 .ViewerTableRow-type-selector {
@@ -42,12 +44,15 @@
   width: 100%;
   font-family: inherit;
   font-size: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .ViewerTable-name-filter-clear {
   cursor: pointer;
   position: absolute;
-  right: 0px;
+  right: 6px;
   top: 2px;
   color: #aaa;
 }
@@ -74,12 +79,25 @@
   transform: rotate(-10deg);
 }
 
+.ViewerTable-header-download-selector {
+  cursor: pointer;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 10px;
+  margin: 5px;
+  position: absolute;
+  right: 40px;
+  font-family: inherit;
+}
+
 .ViewerTable-header-toggle {
   cursor: pointer;
   position: absolute;
   right: 20px;
   top: 2px;
   transform: scale(1.0, 0.7);
+  z-index: 2;
 }
 
 .ViewerTable-header-toggle-open:before {
