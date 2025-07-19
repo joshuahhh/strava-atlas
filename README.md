@@ -41,24 +41,6 @@ If you wish to contribute code, that's fantastic! I suggest you start by describ
 
 * I intend for Strava Atlas to support Chrome, Firefox, and Safari. However, I do not intend for Strava Atlas to support older versions of any of these browsers.
 
-## Secret features
-
-### cross-storage access
-
-The <a href="https://github.com/zendesk/cross-storage">`cross-storage` library</a> allows one site to access the `localStorage` of another. Using this, you can access Strava Atlas data from other sites. This involves two steps:
-
-1. First, open the JavaScript console on https://strava-atlas.herokuapp.com/ and turn on this feature. You do this by setting `localStorage.crossStoragePermissions` to a `permissions` object, as described in the <a href="https://github.com/zendesk/cross-storage#crossstoragehubinitpermissions">cross-storage docs</a>. (`origin` should be provided as a string, rather than a regexp.) For instance, to make Strava Atlas data accessible from my <a href="https://observablehq.com/">Observable</a> notebooks, I run:
-
-    ```
-    localStorage.crossStoragePermissions = JSON.stringify([
-        {origin: '^https://joshuahhh\\.static\\.observableusercontent\\.com$', allow: ['get']}
-    ])
-    ```
-
-2. On the client side, access Strava Mapper as the <a href="https://github.com/zendesk/cross-storage">cross-storage docs</a> describe, starting with `new CrossStorageClient('https://strava-atlas.herokuapp.com/hub.html')`.
-
-This is hacky / provisional / subject to change.
-
 ## Acknowledgements
 
 Strava Atlas is inspired by Jonathan O'Keeffe's <a href="http://www.jonathanokeeffe.com/strava/map.php">Strava Multiple Ride Mapper</a>.

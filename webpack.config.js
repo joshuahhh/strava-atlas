@@ -10,7 +10,6 @@ module.exports = {
     mode: process.env.NODE_ENV,
     entry: {
         main: _.compact([ './src/main.ts', !PROD && 'webpack-hot-middleware/client?reload=true' ]),
-        hub: _.compact([ './src/hub.ts', !PROD && 'webpack-hot-middleware/client?reload=true' ]),
     },
     output: {
         filename: 'js/[name].js',

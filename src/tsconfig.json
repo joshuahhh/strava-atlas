@@ -9,6 +9,6 @@
     "allowJs": true,
     "importsNotUsedAsValues": "preserve"
   },
-  "files": ["./main.ts", "./hub.ts"],
+  "files": ["./main.ts"],
   "include": ["types.d.ts"]
 }

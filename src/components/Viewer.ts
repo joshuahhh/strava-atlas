@@ -8,7 +8,6 @@ import ViewerMap from './ViewerMap';
 import { StravaSummaryActivity } from '../stravaApi';
 import { Act } from '../Act';
 import { redrawOn } from '../shared';
-import JSONStorageItem from '../JSONStorageItem';
 
 
 interface ViewerAttrs {
@@ -56,13 +55,6 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
     if (!visibleActs.find((act) => act.data.id === selectedActId)) {
       selectedActId$(undefined);
     }
-  });
-
-  // For cross-storage convenience
-  const selectedActDataStorage = new JSONStorageItem<StravaSummaryActivity | undefined>('selectedActData');
-  selectedActId$.map((selectedActId) => {
-    const selectedAct = acts$().find((act) => act.data.id === selectedActId);
-    selectedActDataStorage.set(selectedAct?.data);
   });
 
   redrawOn(actDataSync$, syncDate$);
