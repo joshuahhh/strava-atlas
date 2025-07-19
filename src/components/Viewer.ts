@@ -86,6 +86,13 @@ const Viewer: m.ClosureComponent<ViewerAttrs> = ({attrs: { actData$, actDataSync
                       m('summary', 'Advanced'),
                       m('.Viewer-advanced-controls',
                         m('button', { onclick: () => sync({fromScratch: true}) }, 'Sync from scratch'),
+                        selectedActId$() && m('button', {
+                          onclick: () => {
+                            const selectedAct = acts$().find((act) => act.data.id === selectedActId$())!;
+                            actData$(actData$().filter((data) => new Date(data.start_date) < selectedAct.startDate));
+                            sync({fromScratch: false});
+                          },
+                        }, 'Sync from selected'),
                       )
                     ),
                   ]
