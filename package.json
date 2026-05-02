@@ -37,6 +37,8 @@
     "@types/mithril": "^2.2.7",
     "@types/node": "^22.10.0",
     "nodemon": "^3.1.7",
+    "prettier": "^3.4.2",
+    "prettier-plugin-organize-imports": "^4.1.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.3"
   }

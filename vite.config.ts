@@ -1,11 +1,11 @@
-import 'dotenv/config';
-import { defineConfig, type Plugin } from 'vite';
+import "dotenv/config";
+import { defineConfig, type Plugin } from "vite";
 
 function extraHead(): Plugin {
   return {
-    name: 'extra-head',
+    name: "extra-head",
     transformIndexHtml(html) {
-      return html.replace('<!-- EXTRA_HEAD -->', process.env.EXTRA_HEAD || '');
+      return html.replace("<!-- EXTRA_HEAD -->", process.env.EXTRA_HEAD || "");
     },
   };
 }
@@ -13,7 +13,7 @@ function extraHead(): Plugin {
 export default defineConfig({
   plugins: [extraHead()],
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: true,
   },
 });

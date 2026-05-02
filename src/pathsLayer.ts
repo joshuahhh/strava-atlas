@@ -1,11 +1,10 @@
-import Stream from 'mithril/stream';
+import Stream from "mithril/stream";
 
-import { Act } from './Act';
+import { Act } from "./Act";
 
-import L from 'leaflet';
-import 'leaflet-pixi-overlay';
-import * as PIXI from 'pixi.js';
-
+import L from "leaflet";
+import "leaflet-pixi-overlay";
+import * as PIXI from "pixi.js";
 
 PIXI.utils.skipHello();
 PIXI.settings.FILTER_RESOLUTION = L.Browser.retina ? 2 : 1;
@@ -35,7 +34,7 @@ void main(void){
 }
 `;
 
-function drawActivity (gs: PIXI.Graphics, act: Act) {
+function drawActivity(gs: PIXI.Graphics, act: Act) {
   const projectedPoints = act.projPoints;
   if (projectedPoints) {
     projectedPoints.forEach((coords, i) => {
@@ -48,13 +47,16 @@ function drawActivity (gs: PIXI.Graphics, act: Act) {
   }
 }
 
-
 interface PathsLayerArgs {
-  visibleActs$: Stream<Act[]>,
-  hoveredActIds$: Stream<number[]>,
-  selectedActId$: Stream<number | undefined>,
+  visibleActs$: Stream<Act[]>;
+  hoveredActIds$: Stream<number[]>;
+  selectedActId$: Stream<number | undefined>;
 }
-export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$}: PathsLayerArgs): L.Layer {
+export default function pathsLayer({
+  visibleActs$,
+  hoveredActIds$,
+  selectedActId$,
+}: PathsLayerArgs): L.Layer {
   let satActCount = 5;
 
   const pixiContainer = new PIXI.Container();
@@ -69,7 +71,7 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
       if (!act.path) {
         act.path = new PIXI.Graphics();
       }
-      act.path.filters = [ eachActAlphaFilter ];
+      act.path.filters = [eachActAlphaFilter];
       allActPaths.addChild(act.path);
     });
   });
@@ -80,7 +82,7 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
     // fade out other paths if an act is selected
     allActsAlphaFilter.alpha = selectedActId ? 0.5 : 1;
   });
-  allActPaths.filters = [ colorMapFilter, allActsAlphaFilter ];
+  allActPaths.filters = [colorMapFilter, allActsAlphaFilter];
 
   const hoveredActPath = new PIXI.Graphics();
   pixiContainer.addChild(hoveredActPath);
@@ -92,7 +94,9 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
   // This is some machinery to run these reactively.
   let scheduledRedrawPathsLayer = false;
   function scheduleRedrawPathsLayer() {
-    if (scheduledRedrawPathsLayer) { return; }
+    if (scheduledRedrawPathsLayer) {
+      return;
+    }
     scheduledRedrawPathsLayer = true;
     requestAnimationFrame(() => {
       pathsLayer.redraw();
@@ -100,76 +104,132 @@ export default function pathsLayer({visibleActs$, hoveredActIds$, selectedActId$
     });
   }
   let actsChanged = true;
-  visibleActs$.map(() => { actsChanged = true; scheduleRedrawPathsLayer(); });
+  visibleActs$.map(() => {
+    actsChanged = true;
+    scheduleRedrawPathsLayer();
+  });
   let hoveredActIdsChanged = true;
-  hoveredActIds$.map(() => { hoveredActIdsChanged = true; scheduleRedrawPathsLayer(); });
+  hoveredActIds$.map(() => {
+    hoveredActIdsChanged = true;
+    scheduleRedrawPathsLayer();
+  });
   let selectedActIdChanged = true;
-  selectedActId$.map(() => { selectedActIdChanged = true; scheduleRedrawPathsLayer(); });
+  selectedActId$.map(() => {
+    selectedActIdChanged = true;
+    scheduleRedrawPathsLayer();
+  });
 
   let prevZoom: number | undefined = undefined;
-  const pathsLayer = L.pixiOverlay((utils) => {
-    const zoom = utils.getMap().getZoom();
-    const renderer = utils.getRenderer();
-    const project = utils.latLngToLayerPoint;
-    const scale = utils.getScale();
+  const pathsLayer = L.pixiOverlay(
+    (utils) => {
+      const zoom = utils.getMap().getZoom();
+      const renderer = utils.getRenderer();
+      const project = utils.latLngToLayerPoint;
+      const scale = utils.getScale();
 
-    const zoomChanged = prevZoom !== zoom;
+      const zoomChanged = prevZoom !== zoom;
 
-    if (actsChanged) {
-      visibleActs$().forEach((act) => act.applyProjection(project, utils.getScale));
-    }
+      if (actsChanged) {
+        visibleActs$().forEach((act) =>
+          act.applyProjection(project, utils.getScale),
+        );
+      }
 
-    // bounds-based culling
-    const mapBounds = utils.getMap().getBounds();
-    const mapBoundsProj = L.bounds(project(mapBounds.getSouthWest()), project(mapBounds.getNorthEast()));
-    visibleActs$().forEach((act) => {
-      if (act.path) {
-        if (act.projBounds && mapBoundsProj.overlaps(act.projBounds) && act.projPoints?.some(p => mapBoundsProj.contains(p))) {
-          act.path.visible = true;
+      // bounds-based culling
+      const mapBounds = utils.getMap().getBounds();
+      const mapBoundsProj = L.bounds(
+        project(mapBounds.getSouthWest()),
+        project(mapBounds.getNorthEast()),
+      );
+      visibleActs$().forEach((act) => {
+        if (act.path) {
+          if (
+            act.projBounds &&
+            mapBoundsProj.overlaps(act.projBounds) &&
+            act.projPoints?.some((p) => mapBoundsProj.contains(p))
+          ) {
+            act.path.visible = true;
 
-          if (act.pathZoom !== zoom) {
-            act.pathZoom = zoom;
-            act.path.clear();
-            act.path.lineTextureStyle({width: 4 / scale, color: 0xFF0000, alpha: 1, join: PIXI.LINE_JOIN.BEVEL, alignment: 0.5});
-            drawActivity(act.path, act);
+            if (act.pathZoom !== zoom) {
+              act.pathZoom = zoom;
+              act.path.clear();
+              act.path.lineTextureStyle({
+                width: 4 / scale,
+                color: 0xff0000,
+                alpha: 1,
+                join: PIXI.LINE_JOIN.BEVEL,
+                alignment: 0.5,
+              });
+              drawActivity(act.path, act);
+            }
+          } else {
+            act.path.visible = false;
           }
-        } else {
-          act.path.visible = false;
+        }
+      });
+
+      if (hoveredActIdsChanged || zoomChanged) {
+        if (hoveredActIds$().length < 200) {
+          hoveredActPath.clear();
+          const hoveredActs = visibleActs$().filter((act) =>
+            hoveredActIds$().includes(act.data.id),
+          );
+          hoveredActs.forEach((hoveredAct) => {
+            hoveredActPath.lineTextureStyle({
+              width: 9 / scale,
+              color: 0x000000,
+              join: PIXI.LINE_JOIN.ROUND,
+              cap: PIXI.LINE_CAP.ROUND,
+              alignment: 0.5,
+            });
+            drawActivity(hoveredActPath, hoveredAct);
+            hoveredActPath.lineTextureStyle({
+              width: 4 / scale,
+              color: 0xeeee00,
+              join: PIXI.LINE_JOIN.ROUND,
+              cap: PIXI.LINE_CAP.ROUND,
+              alignment: 0.5,
+            });
+            drawActivity(hoveredActPath, hoveredAct);
+          });
         }
       }
-    });
 
-    if (hoveredActIdsChanged || zoomChanged) {
-      if (hoveredActIds$().length < 200) {
-        hoveredActPath.clear();
-        const hoveredActs = visibleActs$().filter((act) => hoveredActIds$().includes(act.data.id));
-        hoveredActs.forEach((hoveredAct) => {
-          hoveredActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-          drawActivity(hoveredActPath, hoveredAct);
-          hoveredActPath.lineTextureStyle({width: 4 / scale, color: 0xEEEE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-          drawActivity(hoveredActPath, hoveredAct);
-        });
+      if (selectedActIdChanged || zoomChanged) {
+        selectedActPath.clear();
+        const selectedAct = visibleActs$().find(
+          (act) => act.data.id === selectedActId$(),
+        );
+        if (selectedAct) {
+          selectedActPath.lineTextureStyle({
+            width: 9 / scale,
+            color: 0x000000,
+            join: PIXI.LINE_JOIN.ROUND,
+            cap: PIXI.LINE_CAP.ROUND,
+            alignment: 0.5,
+          });
+          drawActivity(selectedActPath, selectedAct);
+          selectedActPath.lineTextureStyle({
+            width: 4 / scale,
+            color: 0x00ee00,
+            join: PIXI.LINE_JOIN.ROUND,
+            cap: PIXI.LINE_CAP.ROUND,
+            alignment: 0.5,
+          });
+          drawActivity(selectedActPath, selectedAct);
+        }
       }
-    }
 
-    if (selectedActIdChanged || zoomChanged) {
-      selectedActPath.clear();
-      const selectedAct = visibleActs$().find((act) => act.data.id === selectedActId$());
-      if (selectedAct)  {
-        selectedActPath.lineTextureStyle({width: 9 / scale, color: 0x000000, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-        drawActivity(selectedActPath, selectedAct);
-        selectedActPath.lineTextureStyle({width: 4 / scale, color: 0x00EE00, join: PIXI.LINE_JOIN.ROUND, cap: PIXI.LINE_CAP.ROUND, alignment: 0.5});
-        drawActivity(selectedActPath, selectedAct);
-      }
-    }
+      actsChanged = false;
+      hoveredActIdsChanged = false;
+      selectedActIdChanged = false;
+      prevZoom = zoom;
 
-    actsChanged = false;
-    hoveredActIdsChanged = false;
-    selectedActIdChanged = false;
-    prevZoom = zoom;
-
-    renderer.render(pixiContainer);
-  }, pixiContainer, {pane: 'mapPane'});
+      renderer.render(pixiContainer);
+    },
+    pixiContainer,
+    { pane: "mapPane" },
+  );
 
   return pathsLayer;
 }

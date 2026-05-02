@@ -16,7 +16,9 @@
 
 .ViewerTable-header {
   position: relative;
-  transition: top 0.5s, height 0.5s;
+  transition:
+    top 0.5s,
+    height 0.5s;
   display: flex;
   align-items: flex-start;
 }
@@ -36,7 +38,7 @@
 }
 
 .ViewerTable-name-filter-container {
-  position: relative
+  position: relative;
 }
 
 .ViewerTable-name-filter {
@@ -58,7 +60,7 @@
 }
 
 .ViewerTable-name-filter-clear:before {
-  content: '✕';
+  content: "✕";
 }
 
 .ViewerTable-column-label {
@@ -96,22 +98,22 @@
   position: absolute;
   right: 20px;
   top: 2px;
-  transform: scale(1.0, 0.7);
+  transform: scale(1, 0.7);
   z-index: 2;
 }
 
 .ViewerTable-header-toggle-open:before {
-  content: '▽';
+  content: "▽";
 }
 
 .ViewerTable-header-toggle-open:hover:before {
-  content: '▼';
+  content: "▼";
 }
 
 .ViewerTable-header-toggle-close:before {
-  content: '△';
+  content: "△";
 }
 
 .ViewerTable-header-toggle-close:hover:before {
-  content: '▲';
+  content: "▲";
 }

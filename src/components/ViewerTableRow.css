@@ -25,7 +25,8 @@
   font-style: italic;
 }
 
-.ViewerTableRow-date, .ViewerTableRow-stat {
+.ViewerTableRow-date,
+.ViewerTableRow-stat {
   color: #999;
   display: inline-block;
   margin-right: 11px;
@@ -50,7 +51,7 @@
   margin-left: 10px;
 }
 
-.ViewerTableRow.hovered-directly .ViewerTableRow-strava-link{
+.ViewerTableRow.hovered-directly .ViewerTableRow-strava-link {
   visibility: visible;
 }
 

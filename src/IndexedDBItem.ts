@@ -1,5 +1,5 @@
 const DB_VERSION = 1;
-const STORE_NAME = 'keyValueStore';
+const STORE_NAME = "keyValueStore";
 
 export function initDB(dbName: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -18,12 +18,15 @@ export function initDB(dbName: string): Promise<IDBDatabase> {
 }
 
 export default class IndexedDBItem<T> {
-  constructor(readonly key: string, private dbPromise: Promise<IDBDatabase>) { }
+  constructor(
+    readonly key: string,
+    private dbPromise: Promise<IDBDatabase>,
+  ) {}
 
   async get(): Promise<T | null> {
     const db = await this.dbPromise;
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const transaction = db.transaction(STORE_NAME, "readonly");
       const store = transaction.objectStore(STORE_NAME);
       const request = store.get(this.key);
 
@@ -38,7 +41,7 @@ export default class IndexedDBItem<T> {
   async set(value: T): Promise<void> {
     const db = await this.dbPromise;
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       const request = store.put(value, this.key);
 
@@ -50,7 +53,7 @@ export default class IndexedDBItem<T> {
   async remove(): Promise<void> {
     const db = await this.dbPromise;
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const transaction = db.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
       const request = store.delete(this.key);
 

@@ -5,7 +5,6 @@ import toGPX from "togpx";
 
 import { Act } from "./Act";
 
-
 function actToGeoJSONFeature(act: Act): GeoJSON.Feature | undefined {
   if (!act.latLngs) {
     return undefined;

@@ -14,10 +14,10 @@ To run your own copy of Strava Atlas:
 
 2. Register a <a href='https://www.strava.com/settings/api'>Strava API Application</a> to get a "Client ID" and "Client Secret". Put them in a file called `.env`, in the base of the repository. This file should look like:
 
-    ```
-    STRAVA_CLIENT_ID=12345
-    STRAVA_CLIENT_SECRET=0123456789abcdef0123456789abcdef01234567
-    ```
+   ```
+   STRAVA_CLIENT_ID=12345
+   STRAVA_CLIENT_SECRET=0123456789abcdef0123456789abcdef01234567
+   ```
 
 3. Run `yarn` to install dependencies.
 
@@ -27,7 +27,7 @@ To run your own copy of Strava Atlas:
 
 Deploying a copy of Strava Atlas on a service like Heroku should be relatively straighforward. Tips for specific platforms:
 
-* **Heroku**: Strava Atlas can be deployed directly from the GitHub repository, as long as you set `STRAVA_CLIENT_ID` & `STRAVA_CLIENT_SECRET` as Heroku "Config Vars".
+- **Heroku**: Strava Atlas can be deployed directly from the GitHub repository, as long as you set `STRAVA_CLIENT_ID` & `STRAVA_CLIENT_SECRET` as Heroku "Config Vars".
 
 ## Contributing
 
@@ -39,7 +39,7 @@ If you wish to contribute code, that's fantastic! I suggest you start by describ
 
 ### Technical notes
 
-* I intend for Strava Atlas to support Chrome, Firefox, and Safari. However, I do not intend for Strava Atlas to support older versions of any of these browsers.
+- I intend for Strava Atlas to support Chrome, Firefox, and Safari. However, I do not intend for Strava Atlas to support older versions of any of these browsers.
 
 ## Acknowledgements
 

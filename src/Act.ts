@@ -1,10 +1,9 @@
-import _ from 'lodash';
-import mbPolyline from '@mapbox/polyline';
-import * as PIXI from 'pixi.js';
-import L from 'leaflet';
+import mbPolyline from "@mapbox/polyline";
+import L from "leaflet";
+import _ from "lodash";
+import * as PIXI from "pixi.js";
 
-import { StravaSummaryActivity } from './stravaApi';
-
+import { StravaSummaryActivity } from "./stravaApi";
 
 type GetScale = (zoom: number | undefined) => number;
 
@@ -21,18 +20,27 @@ export class Act {
   projBounds: L.Bounds | undefined;
   getScaleFromProj: GetScale | undefined;
 
-
   constructor(public data: StravaSummaryActivity) {
     this.startDate = new Date(data.start_date);
 
     const polyline = data.map?.summary_polyline;
     if (polyline) {
-      let latLngs = mbPolyline.decode(polyline) as [number, number][];  // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/48644
+      let latLngs = mbPolyline.decode(polyline) as [number, number][]; // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/48644
 
       if (latLngs.length > 2) {
         // filter jaggies
-        const dist1 = _.range(latLngs.length - 1).map(i => Math.hypot(latLngs[i][0] - latLngs[i+1][0], latLngs[i][1] - latLngs[i+1][1]));
-        const dist2 = _.range(latLngs.length - 2).map(i => Math.hypot(latLngs[i][0] - latLngs[i+2][0], latLngs[i][1] - latLngs[i+2][1]));
+        const dist1 = _.range(latLngs.length - 1).map((i) =>
+          Math.hypot(
+            latLngs[i][0] - latLngs[i + 1][0],
+            latLngs[i][1] - latLngs[i + 1][1],
+          ),
+        );
+        const dist2 = _.range(latLngs.length - 2).map((i) =>
+          Math.hypot(
+            latLngs[i][0] - latLngs[i + 2][0],
+            latLngs[i][1] - latLngs[i + 2][1],
+          ),
+        );
         for (let i = latLngs.length - 2; i >= 1; i--) {
           const AB = dist1[i - 1];
           const BC = dist1[i];
@@ -48,7 +56,10 @@ export class Act {
     }
   }
 
-  applyProjection(project: (latlng: [number, number]) => L.Point, getScaleFromProjected: (zoom: number | undefined) => number): void {
+  applyProjection(
+    project: (latlng: [number, number]) => L.Point,
+    getScaleFromProjected: (zoom: number | undefined) => number,
+  ): void {
     this.getScaleFromProj = getScaleFromProjected;
     this.projPoints = this.latLngs?.map((pt) => project(pt));
 
@@ -75,10 +86,16 @@ export class Act {
     }
 
     // hit detection for polylines
-    const projectedPoints = this.projPoints as L.Point[];  // they have xs & ys, which is enough for pointToSegmentDistance
+    const projectedPoints = this.projPoints as L.Point[]; // they have xs & ys, which is enough for pointToSegmentDistance
     const l = projectedPoints.length - 1;
     for (let i = 0; i < l; i++) {
-      if (L.LineUtil.pointToSegmentDistance(projP, projectedPoints[i], projectedPoints[i + 1]) <= projTol) {
+      if (
+        L.LineUtil.pointToSegmentDistance(
+          projP,
+          projectedPoints[i],
+          projectedPoints[i + 1],
+        ) <= projTol
+      ) {
         return true;
       }
     }
@@ -87,5 +104,8 @@ export class Act {
 }
 
 function padBounds(bounds: L.Bounds, padding: number) {
-  return L.bounds(bounds.min!.subtract([padding, padding]), bounds.max!.add([padding, padding]));
+  return L.bounds(
+    bounds.min!.subtract([padding, padding]),
+    bounds.max!.add([padding, padding]),
+  );
 }
