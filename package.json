@@ -26,8 +26,7 @@
     "pixi.js": "^6.5.10",
     "portfinder": "^1.0.32",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "togpx": "^0.5.4"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16",
