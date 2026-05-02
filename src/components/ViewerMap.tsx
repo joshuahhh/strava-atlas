@@ -137,8 +137,6 @@ export function ViewerMap({
       panOrZoomInProgress = false;
     });
 
-    let mouseHasMoved = false; // if this stays false, we're on a touch-only platform
-
     function refreshHoveredActIds(ev: L.LeafletMouseEvent) {
       const projectedPt = map.getPixelOrigin().add(ev.layerPoint);
       const hoveredActs = visibleActsRef.current.filter((act) =>
@@ -150,7 +148,6 @@ export function ViewerMap({
 
     map.on("mousemove", (ev) => {
       if (panOrZoomInProgress) return;
-      mouseHasMoved = true;
 
       const hoveredActs = refreshHoveredActIds(ev as L.LeafletMouseEvent);
 
@@ -175,10 +172,9 @@ export function ViewerMap({
 
     // Deselect selected activity when background is clicked.
     map.on("click", (ev) => {
-      if (!mouseHasMoved) {
-        refreshHoveredActIds(ev as L.LeafletMouseEvent);
-      }
-      const hoveredIds = hoveredActIdsRef.current;
+      const hoveredIds = refreshHoveredActIds(
+        ev as L.LeafletMouseEvent,
+      ).map((act) => act.data.id);
       if (hoveredIds.length === 0) {
         if (selectedActIdRef.current !== undefined) {
           setSelectedActId(undefined);

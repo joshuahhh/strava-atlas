@@ -123,10 +123,22 @@ export function pathsLayer({
   }
 
   let prevZoom: number | undefined = undefined;
+  let interactionDisabled = false;
   const layer = L.pixiOverlay(
     (utils) => {
       const zoom = utils.getMap().getZoom();
       const renderer = utils.getRenderer();
+      // PIXI's interaction plugin calls preventDefault on touchend, which
+      // suppresses the synthesized click on Firefox Android. We don't use
+      // PIXI's hit-testing, so disable it.
+      if (!interactionDisabled) {
+        const interaction = (renderer as PIXI.Renderer).plugins?.interaction;
+        if (interaction) {
+          interaction.autoPreventDefault = false;
+          interaction.destroy();
+        }
+        interactionDisabled = true;
+      }
       const project = utils.latLngToLayerPoint;
       const scale = utils.getScale();
 
