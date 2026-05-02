@@ -3,6 +3,7 @@
   const compression = require("compression");
   const fetch = require("node-fetch");
   const FormData = require("form-data");
+  const http = require("http");
   const path = require("path");
 
   require("dotenv").config();
@@ -91,6 +92,8 @@
     res.send(token);
   });
 
+  const httpServer = http.createServer(app);
+
   if (process.env.NODE_ENV !== "production") {
     if (!PORT) {
       PORT = await require("portfinder").getPortPromise();
@@ -99,7 +102,7 @@
 
     const { createServer } = await import("vite");
     const vite = await createServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: { server: httpServer } },
       appType: "spa",
     });
 
@@ -116,7 +119,7 @@
     app.use(express.static(path.resolve(__dirname, "dist")));
   }
 
-  app.listen(PORT, function () {
+  httpServer.listen(PORT, function () {
     console.log("app.listen");
   });
 })();
