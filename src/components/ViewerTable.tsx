@@ -44,7 +44,7 @@ export default function ViewerTable({
   });
   const [headerOpen, setHeaderOpen] = useState(true);
   const headerDomRef = useRef<HTMLDivElement | null>(null);
-  const mouseIsHoveringRef = useRef(false);
+  const [mouseIsHovering, setMouseIsHovering] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   // Push the table filter predicate up to Viewer whenever filters change.
@@ -226,16 +226,15 @@ export default function ViewerTable({
               isVisible={visibleActs.includes(act)}
               isHovered={hoveredActIds.includes(act.data.id)}
               isHoveredDirectly={
-                hoveredActIds.includes(act.data.id) &&
-                mouseIsHoveringRef.current
+                hoveredActIds.includes(act.data.id) && mouseIsHovering
               }
               isSelected={act.data.id === selectedActId}
               onMouseOver={() => {
-                mouseIsHoveringRef.current = true;
+                setMouseIsHovering(true);
                 setHoveredActIds([act.data.id]);
               }}
               onMouseOut={() => {
-                mouseIsHoveringRef.current = false;
+                setMouseIsHovering(false);
                 setHoveredActIds([]);
               }}
               onClick={() =>
