@@ -54,9 +54,7 @@ export function ViewerMap({
     mapRef.current = map;
 
     // HACK: drawCircle is disabled because it blocks other mouse events
-    (new LocateControl({ drawCircle: false }) as unknown as L.Control).addTo(
-      map,
-    );
+    new LocateControl({ drawCircle: false }).addTo(map);
 
     // ******
     // LAYERS
@@ -149,7 +147,7 @@ export function ViewerMap({
     map.on("mousemove", (ev) => {
       if (panOrZoomInProgress) return;
 
-      const hoveredActs = refreshHoveredActIds(ev as L.LeafletMouseEvent);
+      const hoveredActs = refreshHoveredActIds(ev);
 
       if (hoveredActs.length === 0) {
         map.closeTooltip(tooltip);
@@ -165,16 +163,14 @@ export function ViewerMap({
             .join("<br/>") +
           (numUnlistedActs > 0 ? `<br/>… and ${numUnlistedActs} more` : "");
         tooltip.setContent(tooltipContent);
-        tooltip.setLatLng((ev as L.LeafletMouseEvent).latlng);
+        tooltip.setLatLng(ev.latlng);
         map.openTooltip(tooltip);
       }
     });
 
     // Deselect selected activity when background is clicked.
     map.on("click", (ev) => {
-      const hoveredIds = refreshHoveredActIds(
-        ev as L.LeafletMouseEvent,
-      ).map((act) => act.data.id);
+      const hoveredIds = refreshHoveredActIds(ev).map((act) => act.data.id);
       if (hoveredIds.length === 0) {
         if (selectedActIdRef.current !== undefined) {
           setSelectedActId(undefined);

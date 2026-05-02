@@ -18,7 +18,7 @@ function geoJSONToGPX(fc: GeoJSON.FeatureCollection): string {
   const trks = fc.features
     .map((f) => {
       if (f.geometry.type !== "LineString") return "";
-      const props = (f.properties ?? {}) as Record<string, unknown>;
+      const props = f.properties ?? {};
       const name = xmlEscape(String(props.name ?? props.id ?? ""));
       const desc = xmlEscape(featureDesc(props));
       const pts = f.geometry.coordinates
@@ -76,5 +76,5 @@ export function saveFile(contents: Blob, fileName: string): void {
 }
 
 function compact<T>(arr: (T | undefined)[]): T[] {
-  return arr.filter((x) => x !== undefined) as T[];
+  return arr.filter((x) => x !== undefined);
 }

@@ -132,7 +132,7 @@ export function pathsLayer({
       // suppresses the synthesized click on Firefox Android. We don't use
       // PIXI's hit-testing, so disable it.
       if (!interactionDisabled) {
-        const interaction = (renderer as PIXI.Renderer).plugins?.interaction;
+        const interaction = renderer.plugins?.interaction;
         if (interaction) {
           interaction.autoPreventDefault = false;
           interaction.destroy();

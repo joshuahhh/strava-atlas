@@ -25,7 +25,7 @@ export class Act {
 
     const polyline = data.map?.summary_polyline;
     if (polyline) {
-      let latLngs = mbPolyline.decode(polyline) as [number, number][]; // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/48644
+      let latLngs = mbPolyline.decode(polyline);
 
       if (latLngs.length > 2) {
         // filter jaggies
@@ -86,7 +86,7 @@ export class Act {
     }
 
     // hit detection for polylines
-    const projectedPoints = this.projPoints as L.Point[]; // they have xs & ys, which is enough for pointToSegmentDistance
+    const projectedPoints = this.projPoints;
     const l = projectedPoints.length - 1;
     for (let i = 0; i < l; i++) {
       if (
