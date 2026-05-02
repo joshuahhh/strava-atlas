@@ -6,9 +6,6 @@ import "leaflet/dist/leaflet.css";
 import m, { VnodeDOM } from "mithril";
 import Stream from "mithril/stream";
 
-// fontawesome stuff is needed by L.Control.Locate; pretty big! :(
-import "@fortawesome/fontawesome-free/css/fontawesome.min.css";
-import "@fortawesome/fontawesome-free/css/solid.min.css";
 import "leaflet.locatecontrol/dist/L.Control.Locate.css";
 
 import { Act } from "../Act";
