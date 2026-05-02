@@ -58,7 +58,7 @@ export interface PathsLayerHandle {
   notify: (change: PathsLayerChange) => void;
 }
 
-export default function pathsLayer({
+export function pathsLayer({
   visibleActsRef,
   hoveredActIdsRef,
   selectedActIdRef,

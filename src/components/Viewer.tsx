@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Act } from "../Act";
 import { StravaSummaryActivity } from "../stravaApi";
 import "./Viewer.css";
-import ViewerMap from "./ViewerMap";
-import ViewerTable from "./ViewerTable";
+import { ViewerMap } from "./ViewerMap";
+import { ViewerTable } from "./ViewerTable";
 
 interface ViewerProps {
   actData: StravaSummaryActivity[];
@@ -14,7 +14,7 @@ interface ViewerProps {
   sync: (params: { fromScratch: boolean }) => void;
 }
 
-export default function Viewer({
+export function Viewer({
   actData,
   setActData,
   actDataSync,

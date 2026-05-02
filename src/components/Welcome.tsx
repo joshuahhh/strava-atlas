@@ -5,7 +5,7 @@ interface WelcomeProps {
   actDataSync: StravaSummaryActivity[] | undefined;
 }
 
-export default function Welcome({ actDataSync }: WelcomeProps) {
+export function Welcome({ actDataSync }: WelcomeProps) {
   return (
     <div className="Welcome">
       <div className="Welcome-row">

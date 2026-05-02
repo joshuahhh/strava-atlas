@@ -4,8 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 
 import { Act } from "../Act";
-import type { PathsLayerHandle } from "../pathsLayer";
-import pathsLayer from "../pathsLayer";
+import { pathsLayer, type PathsLayerHandle } from "../pathsLayer";
 
 import "leaflet.locatecontrol/dist/L.Control.Locate.css";
 
@@ -21,7 +20,7 @@ interface ViewerMapProps {
   setSelectedActId: (id: number | undefined) => void;
 }
 
-export default function ViewerMap({
+export function ViewerMap({
   visibleActs,
   hoveredActIds,
   setHoveredActIds,

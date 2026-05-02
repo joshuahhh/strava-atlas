@@ -41,7 +41,7 @@ interface ViewerTableRowProps {
   onActClick: (act: Act) => void;
 }
 
-function ViewerTableRow({
+function ViewerTableRowImpl({
   act,
   isVisible,
   isHovered,
@@ -106,4 +106,4 @@ function ViewerTableRow({
   );
 }
 
-export default memo(ViewerTableRow);
+export const ViewerTableRow = memo(ViewerTableRowImpl);

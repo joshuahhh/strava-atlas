@@ -17,7 +17,7 @@ export function initDB(dbName: string): Promise<IDBDatabase> {
   });
 }
 
-export default class IndexedDBItem<T> {
+export class IndexedDBItem<T> {
   constructor(
     readonly key: string,
     private dbPromise: Promise<IDBDatabase>,

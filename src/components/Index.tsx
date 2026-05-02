@@ -1,14 +1,14 @@
 import _ from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import IndexedDBItem, { initDB } from "../IndexedDBItem";
+import { IndexedDBItem, initDB } from "../IndexedDBItem";
 import {
   fetchActivities,
   OAuthResponse,
   StravaSummaryActivity,
 } from "../stravaApi";
-import Viewer from "./Viewer";
-import Welcome from "./Welcome";
+import { Viewer } from "./Viewer";
+import { Welcome } from "./Welcome";
 
 const db = initDB("strava-atlas");
 
@@ -27,7 +27,7 @@ const syncDateStorage = new IndexedDBItem<number>("syncDate", db);
   console.log("All storage cleared. Reload the page to start fresh.");
 };
 
-export default function Index() {
+export function Index() {
   const [actData, setActData] = useState<StravaSummaryActivity[] | undefined>(
     undefined,
   );

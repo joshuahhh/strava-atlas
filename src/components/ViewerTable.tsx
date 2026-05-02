@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Act } from "../Act";
 import { actsToGeoJSON, actsToGPX, actsToKML, saveFile } from "../export";
 import "./ViewerTable.css";
-import ViewerTableRow from "./ViewerTableRow";
+import { ViewerTableRow } from "./ViewerTableRow";
 
 type Column = "date" | "time" | "distance" | "elevation";
 type Dir = "asc" | "desc";
@@ -27,7 +27,7 @@ interface ViewerTableProps {
   setFilterFromTable: Dispatch<SetStateAction<(act: Act) => boolean>>;
 }
 
-export default function ViewerTable({
+export function ViewerTable({
   acts,
   visibleActs,
   hoveredActIds,
