@@ -1,10 +1,8 @@
-import Stream from "mithril/stream";
-
-import { Act } from "./Act";
-
 import L from "leaflet";
 import "leaflet-pixi-overlay";
 import * as PIXI from "pixi.js";
+
+import { Act } from "./Act";
 
 PIXI.utils.skipHello();
 PIXI.settings.FILTER_RESOLUTION = L.Browser.retina ? 2 : 1;
@@ -47,17 +45,25 @@ function drawActivity(gs: PIXI.Graphics, act: Act) {
   }
 }
 
+export type PathsLayerChange = "acts" | "hovered" | "selected";
+
 interface PathsLayerArgs {
-  visibleActs$: Stream<Act[]>;
-  hoveredActIds$: Stream<number[]>;
-  selectedActId$: Stream<number | undefined>;
+  visibleActsRef: { current: Act[] };
+  hoveredActIdsRef: { current: number[] };
+  selectedActIdRef: { current: number | undefined };
 }
+
+export interface PathsLayerHandle {
+  layer: L.Layer;
+  notify: (change: PathsLayerChange) => void;
+}
+
 export default function pathsLayer({
-  visibleActs$,
-  hoveredActIds$,
-  selectedActId$,
-}: PathsLayerArgs): L.Layer {
-  let satActCount = 5;
+  visibleActsRef,
+  hoveredActIdsRef,
+  selectedActIdRef,
+}: PathsLayerArgs): PathsLayerHandle {
+  const satActCount = 5;
 
   const pixiContainer = new PIXI.Container();
 
@@ -65,23 +71,9 @@ export default function pathsLayer({
   pixiContainer.addChild(allActPaths);
 
   const eachActAlphaFilter = new PIXI.filters.AlphaFilter(1 / satActCount);
-  visibleActs$.map((acts) => {
-    allActPaths.removeChildren();
-    acts.forEach((act) => {
-      if (!act.path) {
-        act.path = new PIXI.Graphics();
-      }
-      act.path.filters = [eachActAlphaFilter];
-      allActPaths.addChild(act.path);
-    });
-  });
   const colorMapFilter = new PIXI.Filter(undefined, colorMapFrag);
   colorMapFilter.uniforms.eachActAlpha = 1 / satActCount;
   const allActsAlphaFilter = new PIXI.filters.AlphaFilter(1);
-  selectedActId$.map((selectedActId) => {
-    // fade out other paths if an act is selected
-    allActsAlphaFilter.alpha = selectedActId ? 0.5 : 1;
-  });
   allActPaths.filters = [colorMapFilter, allActsAlphaFilter];
 
   const hoveredActPath = new PIXI.Graphics();
@@ -90,37 +82,48 @@ export default function pathsLayer({
   const selectedActPath = new PIXI.Graphics();
   pixiContainer.addChild(selectedActPath);
 
-  // The pathsLayer draw function has different parts which depend on different streams.
-  // This is some machinery to run these reactively.
-  let scheduledRedrawPathsLayer = false;
-  function scheduleRedrawPathsLayer() {
-    if (scheduledRedrawPathsLayer) {
-      return;
-    }
-    scheduledRedrawPathsLayer = true;
-    requestAnimationFrame(() => {
-      pathsLayer.redraw();
-      scheduledRedrawPathsLayer = false;
+  // Sync the PIXI children to match the current visibleActs (called whenever visibleActs changes).
+  function syncActChildren() {
+    allActPaths.removeChildren();
+    visibleActsRef.current.forEach((act) => {
+      if (!act.path) {
+        act.path = new PIXI.Graphics();
+      }
+      act.path.filters = [eachActAlphaFilter];
+      allActPaths.addChild(act.path);
     });
   }
+
   let actsChanged = true;
-  visibleActs$.map(() => {
-    actsChanged = true;
-    scheduleRedrawPathsLayer();
-  });
   let hoveredActIdsChanged = true;
-  hoveredActIds$.map(() => {
-    hoveredActIdsChanged = true;
-    scheduleRedrawPathsLayer();
-  });
   let selectedActIdChanged = true;
-  selectedActId$.map(() => {
-    selectedActIdChanged = true;
-    scheduleRedrawPathsLayer();
-  });
+  let scheduledRedraw = false;
+
+  function scheduleRedraw() {
+    if (scheduledRedraw) return;
+    scheduledRedraw = true;
+    requestAnimationFrame(() => {
+      layer.redraw();
+      scheduledRedraw = false;
+    });
+  }
+
+  function notify(change: PathsLayerChange) {
+    if (change === "acts") {
+      syncActChildren();
+      actsChanged = true;
+    } else if (change === "hovered") {
+      hoveredActIdsChanged = true;
+    } else if (change === "selected") {
+      selectedActIdChanged = true;
+      // Fade out other paths if an act is selected.
+      allActsAlphaFilter.alpha = selectedActIdRef.current ? 0.5 : 1;
+    }
+    scheduleRedraw();
+  }
 
   let prevZoom: number | undefined = undefined;
-  const pathsLayer = L.pixiOverlay(
+  const layer = L.pixiOverlay(
     (utils) => {
       const zoom = utils.getMap().getZoom();
       const renderer = utils.getRenderer();
@@ -130,7 +133,7 @@ export default function pathsLayer({
       const zoomChanged = prevZoom !== zoom;
 
       if (actsChanged) {
-        visibleActs$().forEach((act) =>
+        visibleActsRef.current.forEach((act) =>
           act.applyProjection(project, utils.getScale),
         );
       }
@@ -141,7 +144,7 @@ export default function pathsLayer({
         project(mapBounds.getSouthWest()),
         project(mapBounds.getNorthEast()),
       );
-      visibleActs$().forEach((act) => {
+      visibleActsRef.current.forEach((act) => {
         if (act.path) {
           if (
             act.projBounds &&
@@ -169,10 +172,10 @@ export default function pathsLayer({
       });
 
       if (hoveredActIdsChanged || zoomChanged) {
-        if (hoveredActIds$().length < 200) {
+        if (hoveredActIdsRef.current.length < 200) {
           hoveredActPath.clear();
-          const hoveredActs = visibleActs$().filter((act) =>
-            hoveredActIds$().includes(act.data.id),
+          const hoveredActs = visibleActsRef.current.filter((act) =>
+            hoveredActIdsRef.current.includes(act.data.id),
           );
           hoveredActs.forEach((hoveredAct) => {
             hoveredActPath.lineTextureStyle({
@@ -197,8 +200,8 @@ export default function pathsLayer({
 
       if (selectedActIdChanged || zoomChanged) {
         selectedActPath.clear();
-        const selectedAct = visibleActs$().find(
-          (act) => act.data.id === selectedActId$(),
+        const selectedAct = visibleActsRef.current.find(
+          (act) => act.data.id === selectedActIdRef.current,
         );
         if (selectedAct) {
           selectedActPath.lineTextureStyle({
@@ -231,5 +234,8 @@ export default function pathsLayer({
     { pane: "mapPane" },
   );
 
-  return pathsLayer;
+  const handle: PathsLayerHandle = { layer, notify };
+  // Initial child sync so the first render has the right contents.
+  syncActChildren();
+  return handle;
 }

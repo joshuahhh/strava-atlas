@@ -1,3 +1,4 @@
+import react from "@vitejs/plugin-react";
 import "dotenv/config";
 import { defineConfig, type Plugin } from "vite";
 
@@ -11,7 +12,7 @@ function extraHead(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [extraHead()],
+  plugins: [react(), extraHead()],
   build: {
     outDir: "dist",
     sourcemap: true,

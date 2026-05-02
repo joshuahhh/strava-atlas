@@ -1,5 +1,3 @@
-import m from "mithril";
-
 export interface StravaPolylineMap {
   id: string;
   polyline: string | null;
@@ -90,12 +88,12 @@ export async function fetchActivities(
   let page = 1;
   let actDataBatch;
   do {
-    actDataBatch = await m.request<StravaSummaryActivity[]>({
-      url:
-        `https://www.strava.com/api/v3/athlete/activities?per_page=${per_page}&page=${page}` +
+    const resp = await fetch(
+      `https://www.strava.com/api/v3/athlete/activities?per_page=${per_page}&page=${page}` +
         (after ? `&after=${after}` : ""),
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+      { headers: { Authorization: `Bearer ${access_token}` } },
+    );
+    actDataBatch = (await resp.json()) as StravaSummaryActivity[];
     actData.push(...actDataBatch);
     page++;
     onProgress && onProgress(actData.slice());
