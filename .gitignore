@@ -1,7 +1,6 @@
 /node_modules
 npm-debug.log
-/public/js
-/public/index.html
+/dist
+*.tsbuildinfo
 yarn-error.log
 .env
-.vscode

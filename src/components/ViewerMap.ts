@@ -4,7 +4,7 @@ import m, { VnodeDOM } from 'mithril';
 import Stream from 'mithril/stream';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.locatecontrol';
+import { LocateControl } from 'leaflet.locatecontrol';
 
 // fontawesome stuff is needed by L.Control.Locate; pretty big! :(
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
@@ -24,9 +24,9 @@ interface ViewerMapAttrs {
 }
 const ViewerMap: m.ClosureComponent<ViewerMapAttrs> = ({attrs: {visibleActs$, selectedActId$, multiselectedActIds$, hoveredActIds$}}) => {
   function oncreate({dom}: VnodeDOM) {
-    const map = L.map(dom as HTMLElement, { renderer: L.canvas(), tap: true });
+    const map = L.map(dom as HTMLElement, { renderer: L.canvas() });
 
-    L.control.locate({ drawCircle: false }).addTo(map);  // HACK: drawCircle is disabled because it blocks other mouse events
+    new LocateControl({ drawCircle: false }).addTo(map);  // HACK: drawCircle is disabled because it blocks other mouse events
 
 
     // ******

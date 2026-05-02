@@ -3,17 +3,13 @@
   const compression = require('compression')
   const fetch = require('node-fetch');
   const FormData = require('form-data');
-  const { inspect } = require('util');
-  const fs = require('fs');
+  const path = require('path');
 
   require('dotenv').config()
   const {STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET} = process.env;
   if (!STRAVA_CLIENT_ID) { throw "STRAVA_CLIENT_ID missing from env"; }
   if (!STRAVA_CLIENT_SECRET) { throw "STRAVA_CLIENT_SECRET missing from env"; }
 
-  const indexTemplate = fs.readFileSync('public/index-template.html').toString();
-  const index = indexTemplate.replace('<!-- EXTRA_HEAD -->', process.env.EXTRA_HEAD || '');
-  fs.writeFileSync('public/index.html', index);
 
   function addSearchParamsFromPairs(url, pairs) {
     const searchParams = url.searchParams;
@@ -38,27 +34,6 @@
   app.enable('trust proxy')  // for herokuapp.com
 
   let PORT = process.env.PORT;
-
-  if (process.env.NODE_ENV !== 'production') {
-    if (!PORT) {
-      PORT = await require('portfinder').getPortPromise();
-    }
-    console.log(`running in development mode: http://localhost:${PORT}/`);
-
-    const config = require('./webpack.config.js');
-    const compiler = require('webpack')(config);
-    app.use(require('webpack-dev-middleware')(compiler));
-    app.use(require('webpack-hot-middleware')(compiler));
-  } else {
-    if (!PORT) {
-      console.error('running in production mode, but no PORT env variable! exiting')
-      console.error('  [ did you mean to `yarn dev`? ]')
-      process.exit(1)
-    }
-    console.log(`running in production mode on ${PORT}`);
-  }
-
-  app.use(express.static('public'));
 
   app.get('/api/redirect-to-auth', (req, res) => {
     let redirectURL = new URL('https://www.strava.com/oauth/authorize');
@@ -115,6 +90,28 @@
     res.send(token);
   });
 
+  if (process.env.NODE_ENV !== "production") {
+    if (!PORT) {
+      PORT = await require("portfinder").getPortPromise();
+    }
+    console.log(`running in development mode: http://localhost:${PORT}/`);
+
+    const { createServer } = await import("vite");
+    const vite = await createServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+
+    app.use(vite.middlewares);
+  } else {
+    if (!PORT) {
+      console.error("running in production mode, but no PORT env variable! exiting");
+      console.error("  [ did you mean to `npm run dev`? ]");
+      process.exit(1);
+    }
+    console.log(`running in production mode on ${PORT}`);
+    app.use(express.static(path.resolve(__dirname, "dist")));
+  }
 
   app.listen(PORT, function () {
     console.log('app.listen');
