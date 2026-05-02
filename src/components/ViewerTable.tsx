@@ -1,6 +1,6 @@
 import _ from "lodash";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Act } from "../Act";
 import { actsToGeoJSON, actsToGPX, actsToKML, saveFile } from "../export";
@@ -23,7 +23,7 @@ interface ViewerTableProps {
   hoveredActIds: number[];
   setHoveredActIds: (ids: number[]) => void;
   selectedActId: number | undefined;
-  setSelectedActId: (id: number | undefined) => void;
+  setSelectedActId: Dispatch<SetStateAction<number | undefined>>;
   setFilterFromTable: Dispatch<SetStateAction<(act: Act) => boolean>>;
 }
 
@@ -101,6 +101,27 @@ export default function ViewerTable({
     }
     tableRow.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [selectedActId]);
+
+  // Stable callbacks so memoized ViewerTableRows skip re-renders when their props are unchanged.
+  const onHoverIn = useCallback(
+    (act: Act) => {
+      setMouseIsHovering(true);
+      setHoveredActIds([act.data.id]);
+    },
+    [setHoveredActIds],
+  );
+  const onHoverOut = useCallback(() => {
+    setMouseIsHovering(false);
+    setHoveredActIds([]);
+  }, [setHoveredActIds]);
+  const onActClick = useCallback(
+    (act: Act) => {
+      setSelectedActId((prev) =>
+        prev === act.data.id ? undefined : act.data.id,
+      );
+    },
+    [setSelectedActId],
+  );
 
   function toggleSort(toggleColumn: Column) {
     setSort((prev) =>
@@ -229,19 +250,9 @@ export default function ViewerTable({
                 hoveredActIds.includes(act.data.id) && mouseIsHovering
               }
               isSelected={act.data.id === selectedActId}
-              onMouseOver={() => {
-                setMouseIsHovering(true);
-                setHoveredActIds([act.data.id]);
-              }}
-              onMouseOut={() => {
-                setMouseIsHovering(false);
-                setHoveredActIds([]);
-              }}
-              onClick={() =>
-                setSelectedActId(
-                  selectedActId === act.data.id ? undefined : act.data.id,
-                )
-              }
+              onHoverIn={onHoverIn}
+              onHoverOut={onHoverOut}
+              onActClick={onActClick}
             />
           ))}
         </div>

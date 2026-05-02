@@ -1,6 +1,6 @@
 import classnames from "classnames";
 import dayjs from "dayjs";
-import type { HTMLAttributes, ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 
 import { Act } from "../Act";
 import "../strava-icons.css";
@@ -30,21 +30,26 @@ function formatDuration(secs: number): ReactNode {
   }
 }
 
-interface ViewerTableRowProps extends HTMLAttributes<HTMLDivElement> {
+interface ViewerTableRowProps {
   act: Act;
   isVisible: boolean;
   isHovered: boolean;
   isHoveredDirectly: boolean;
   isSelected: boolean;
+  onHoverIn: (act: Act) => void;
+  onHoverOut: () => void;
+  onActClick: (act: Act) => void;
 }
 
-export default function ViewerTableRow({
+function ViewerTableRow({
   act,
   isVisible,
   isHovered,
   isHoveredDirectly,
   isSelected,
-  ...rest
+  onHoverIn,
+  onHoverOut,
+  onActClick,
 }: ViewerTableRowProps) {
   return (
     <div
@@ -55,7 +60,9 @@ export default function ViewerTableRow({
         "hovered-directly": isHoveredDirectly,
         selected: isSelected,
       })}
-      {...rest}
+      onMouseOver={() => onHoverIn(act)}
+      onMouseOut={() => onHoverOut()}
+      onClick={() => onActClick(act)}
     >
       <div
         className={`ViewerTableRow-left app-icon icon-${act.data.type.toLowerCase()}`}
@@ -98,3 +105,5 @@ export default function ViewerTableRow({
     </div>
   );
 }
+
+export default memo(ViewerTableRow);
