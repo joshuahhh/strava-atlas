@@ -1,31 +1,22 @@
 import mbPolyline from "@mapbox/polyline";
-import L from "leaflet";
 import _ from "lodash";
-import * as PIXI from "pixi.js";
 
 import { StravaSummaryActivity } from "./stravaApi";
-
-type GetScale = (zoom: number | undefined) => number;
 
 export class Act {
   startDate: Date;
   latLngs: [number, number][] | undefined;
 
-  path: PIXI.Graphics | undefined;
-  pathZoom: number | undefined;
-
-  // the latLngs get projected at a particular initial zoom level
-  // so these are in "initial-zoom pixels"
-  projPoints: L.Point[] | undefined;
-  projBounds: L.Bounds | undefined;
-  getScaleFromProj: GetScale | undefined;
+  // Web-Mercator unit coordinates ([0,1] × [0,1]); precomputed once.
+  mercPoints: [number, number][] | undefined;
+  mercBounds: [number, number, number, number] | undefined; // [minX, minY, maxX, maxY]
 
   constructor(public data: StravaSummaryActivity) {
     this.startDate = new Date(data.start_date);
 
     const polyline = data.map?.summary_polyline;
     if (polyline) {
-      let latLngs = mbPolyline.decode(polyline);
+      const latLngs = mbPolyline.decode(polyline);
 
       if (latLngs.length > 2) {
         // filter jaggies
@@ -53,49 +44,39 @@ export class Act {
       }
 
       this.latLngs = latLngs;
+      this.mercPoints = latLngs.map(latLngToMerc);
+      if (this.mercPoints.length > 0) {
+        let minX = Infinity,
+          minY = Infinity,
+          maxX = -Infinity,
+          maxY = -Infinity;
+        for (const [x, y] of this.mercPoints) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+        this.mercBounds = [minX, minY, maxX, maxY];
+      }
     }
   }
 
-  applyProjection(
-    project: (latlng: [number, number]) => L.Point,
-    getScaleFromProjected: (zoom: number | undefined) => number,
-  ): void {
-    this.getScaleFromProj = getScaleFromProjected;
-    this.projPoints = this.latLngs?.map((pt) => project(pt));
-
-    if (this.projPoints && this.projPoints.length > 0) {
-      this.projBounds = L.bounds(this.projPoints);
-    }
-  }
-
-  // adapted from Leaflet/src/layer/vector/Polyline.js
-  // p & tolerance are in in 'scale' pixels, unlike this.projX – you need to use this.getScaleFromProj(zoom)
-  containsProjectedPoint(p: L.Point, tol: number, zoom: number): boolean {
-    if (!this.projPoints || !this.projBounds || !this.getScaleFromProj) {
+  // Hit-test in mercator space. `tol` is in mercator units.
+  containsMercatorPoint(px: number, py: number, tol: number): boolean {
+    if (!this.mercPoints || !this.mercBounds) return false;
+    const [minX, minY, maxX, maxY] = this.mercBounds;
+    if (
+      px < minX - tol ||
+      px > maxX + tol ||
+      py < minY - tol ||
+      py > maxY + tol
+    ) {
       return false;
     }
-
-    const scale = this.getScaleFromProj(zoom);
-
-    // This point is in the same coordinates as this.projX
-    const projP = p.divideBy(scale);
-    const projTol = tol / scale;
-
-    if (!padBounds(this.projBounds, projTol).contains(projP)) {
-      return false;
-    }
-
-    // hit detection for polylines
-    const projectedPoints = this.projPoints;
-    const l = projectedPoints.length - 1;
-    for (let i = 0; i < l; i++) {
-      if (
-        L.LineUtil.pointToSegmentDistance(
-          projP,
-          projectedPoints[i],
-          projectedPoints[i + 1],
-        ) <= projTol
-      ) {
+    const tolSq = tol * tol;
+    const pts = this.mercPoints;
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (pointToSegmentDistanceSq(px, py, pts[i], pts[i + 1]) <= tolSq) {
         return true;
       }
     }
@@ -103,9 +84,31 @@ export class Act {
   }
 }
 
-function padBounds(bounds: L.Bounds, padding: number) {
-  return L.bounds(
-    bounds.min!.subtract([padding, padding]),
-    bounds.max!.add([padding, padding]),
-  );
+export function latLngToMerc([lat, lng]: [number, number]): [number, number] {
+  const x = (lng + 180) / 360;
+  const sinLat = Math.sin((lat * Math.PI) / 180);
+  const y = 0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI);
+  return [x, y];
+}
+
+function pointToSegmentDistanceSq(
+  px: number,
+  py: number,
+  a: [number, number],
+  b: [number, number],
+): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const lenSq = dx * dx + dy * dy;
+  let t = 0;
+  if (lenSq > 0) {
+    t = ((px - a[0]) * dx + (py - a[1]) * dy) / lenSq;
+    if (t < 0) t = 0;
+    else if (t > 1) t = 1;
+  }
+  const cx = a[0] + t * dx;
+  const cy = a[1] + t * dy;
+  const ex = px - cx;
+  const ey = py - cy;
+  return ex * ex + ey * ey;
 }

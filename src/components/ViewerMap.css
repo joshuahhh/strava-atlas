@@ -2,6 +2,32 @@
   height: 100%;
 }
 
+.ViewerMap-tooltip-popup,
+.ViewerMap-tooltip-popup * {
+  pointer-events: none !important;
+}
+
+.ViewerMap-tooltip-popup {
+  max-width: none !important;
+}
+
+.ViewerMap-tooltip-popup .maplibregl-popup-content {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.ViewerMap-tooltip-popup .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.85);
+}
+
+.ViewerMap-tooltip {
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
 .ViewerMap-marker-start,
 .ViewerMap-marker-end {
   border: 3px solid black;

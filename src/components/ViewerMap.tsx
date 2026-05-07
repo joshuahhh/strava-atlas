@@ -1,14 +1,15 @@
-import L from "leaflet";
-import { LocateControl } from "leaflet.locatecontrol";
-import "leaflet/dist/leaflet.css";
-import { useEffect, useRef } from "react";
+import { MapboxOverlay } from "@deck.gl/mapbox";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { useEffect, useRef, useState } from "react";
 
-import { Act } from "../Act";
-import { pathsLayer, type PathsLayerHandle } from "../pathsLayer";
-
-import "leaflet.locatecontrol/dist/L.Control.Locate.css";
+import { Act, latLngToMerc } from "../Act";
+import { StravaPathsLayer } from "../pathsLayer";
 
 import "./ViewerMap.css";
+
+const STYLE_URL =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 interface ViewerMapProps {
   visibleActs: Act[];
@@ -32,145 +33,131 @@ export function ViewerMap({
   // Refs that mirror the latest props so map handlers (created once) read the current values.
   const visibleActsRef = useRef(visibleActs);
   visibleActsRef.current = visibleActs;
-  const hoveredActIdsRef = useRef(hoveredActIds);
-  hoveredActIdsRef.current = hoveredActIds;
   const multiselectedActIdsRef = useRef(multiselectedActIds);
   multiselectedActIdsRef.current = multiselectedActIds;
   const selectedActIdRef = useRef(selectedActId);
   selectedActIdRef.current = selectedActId;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const pathsLayerRef = useRef<PathsLayerHandle | null>(null);
-  const startMarkerRef = useRef<L.Marker | null>(null);
-  const endMarkerRef = useRef<L.Marker | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const overlayRef = useRef<MapboxOverlay | null>(null);
+  const beforeIdRef = useRef<string | undefined>(undefined);
+  const startMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const endMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   // One-time map setup.
   useEffect(() => {
     const dom = containerRef.current;
     if (!dom) return;
 
-    const map = L.map(dom, { renderer: L.canvas() });
+    // Initial center/zoom from URL hash, else world.
+    let initialCenter: [number, number] = [0, 0];
+    let initialZoom = 1;
+    let usedHash = false;
+    if (window.location.hash !== "") {
+      const numPat = "-?[0-9.]+";
+      const match = window.location.hash.match(
+        `^#@(${numPat}),(${numPat}),(${numPat})z$`,
+      );
+      if (match) {
+        initialCenter = [+match[2], +match[1]]; // lng, lat
+        initialZoom = +match[3];
+        usedHash = true;
+      }
+    }
+
+    const map = new maplibregl.Map({
+      container: dom,
+      style: STYLE_URL,
+      center: initialCenter,
+      zoom: initialZoom,
+      attributionControl: { compact: true },
+      pitchWithRotate: false,
+      dragRotate: false,
+    });
+    map.touchZoomRotate.disableRotation();
     mapRef.current = map;
 
-    // HACK: drawCircle is disabled because it blocks other mouse events
-    new LocateControl({ drawCircle: false }).addTo(map);
-
-    // ******
-    // LAYERS
-    // ******
-
-    const attribution =
-      '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/about-carto/">CARTO</a>';
-    const ext = L.Browser.retina ? "@2x.png" : ".png";
-
-    // zIndex values:
-    //  -100 - base map nolabels
-    //     0 - pathsLayer (from PIXI)
-    //   600 - markers (ViewerMap-marker-start & ViewerMap-marker-end)
-    //   625 - base map only_labels
-    //   650 - tooltips
-
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}" + ext,
-      { zIndex: -100, pane: "mapPane", attribution },
-    ).addTo(map);
-
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}" + ext,
-      { zIndex: 625, pane: "mapPane", attribution },
-    ).addTo(map);
-
-    const pl = pathsLayer({
-      visibleActsRef,
-      hoveredActIdsRef,
-      selectedActIdRef,
-    });
-    pl.layer.addTo(map);
-    pathsLayerRef.current = pl;
-
-    // *******
-    // MARKERS
-    // *******
-
-    const startMarker = L.marker([0, 0], {
-      opacity: 0,
-      interactive: false,
-      icon: L.divIcon({
-        className: "ViewerMap-marker-start",
-        iconSize: [12, 12],
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
       }),
-      zIndexOffset: 20000, // needs to be large to overcome latitude-based zIndex
-    }).addTo(map);
-    const endMarker = L.marker([0, 0], {
-      opacity: 0,
-      interactive: false,
-      icon: L.divIcon({
-        className: "ViewerMap-marker-end",
-        html: '<div class="ViewerMap-marker-end-child"/>',
-        iconSize: [12, 12],
-      }),
-      zIndexOffset: 10000,
-    }).addTo(map);
-    startMarkerRef.current = startMarker;
-    endMarkerRef.current = endMarker;
+      "top-left",
+    );
 
-    // ************
-    // INTERACTIONS
-    // ************
+    // Markers (start/end of selected activity). Created hidden; a separate
+    // effect updates their position and visibility on selection changes.
+    function makeMarker(className: string, child?: HTMLElement) {
+      const el = document.createElement("div");
+      el.className = className;
+      if (child) el.appendChild(child);
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([0, 0])
+        .addTo(map);
+      el.style.display = "none";
+      return marker;
+    }
+    startMarkerRef.current = makeMarker("ViewerMap-marker-start");
+    const endChild = document.createElement("div");
+    endChild.className = "ViewerMap-marker-end-child";
+    endMarkerRef.current = makeMarker("ViewerMap-marker-end", endChild);
 
-    const tooltip = L.tooltip();
+    // Hover tooltip rendered as a MapLibre Popup (no map interaction).
+    const tooltipEl = document.createElement("div");
+    tooltipEl.className = "ViewerMap-tooltip";
+    const tooltip = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      closeOnMove: false,
+      className: "ViewerMap-tooltip-popup",
+    }).setDOMContent(tooltipEl);
 
-    let panOrZoomInProgress = false;
-    map.on("movestart", () => {
-      panOrZoomInProgress = true;
-    });
-    map.on("moveend", () => {
-      panOrZoomInProgress = false;
-    });
-    map.on("zoomstart", () => {
-      panOrZoomInProgress = true;
-    });
-    map.on("zoomend", () => {
-      panOrZoomInProgress = false;
-    });
+    function projectMerc(lng: number, lat: number): [number, number] {
+      return latLngToMerc([lat, lng]);
+    }
 
-    function refreshHoveredActIds(ev: L.LeafletMouseEvent) {
-      const projectedPt = map.getPixelOrigin().add(ev.layerPoint);
-      const hoveredActs = visibleActsRef.current.filter((act) =>
-        act.containsProjectedPoint(projectedPt, 7, map.getZoom()),
+    function hoveredAt(lng: number, lat: number, tolPx: number): Act[] {
+      const [px, py] = projectMerc(lng, lat);
+      const worldPx = 512 * Math.pow(2, map.getZoom());
+      const tol = tolPx / worldPx;
+      return visibleActsRef.current.filter((act) =>
+        act.containsMercatorPoint(px, py, tol),
       );
-      setHoveredActIds(hoveredActs.map((act) => act.data.id));
-      return hoveredActs;
+    }
+
+    function refreshHoveredActIds(lng: number, lat: number): Act[] {
+      const hits = hoveredAt(lng, lat, 7);
+      setHoveredActIds(hits.map((a) => a.data.id));
+      return hits;
     }
 
     map.on("mousemove", (ev) => {
-      if (panOrZoomInProgress) return;
-
-      const hoveredActs = refreshHoveredActIds(ev);
-
+      if (map.isMoving()) return;
+      const hoveredActs = refreshHoveredActIds(ev.lngLat.lng, ev.lngLat.lat);
       if (hoveredActs.length === 0) {
-        map.closeTooltip(tooltip);
+        tooltip.remove();
       } else {
-        const listedActs = hoveredActs.slice(0, 2);
-        const numUnlistedActs = hoveredActs.length - 2;
-        const tooltipContent =
-          listedActs
+        const listed = hoveredActs.slice(0, 2);
+        const numUnlisted = hoveredActs.length - 2;
+        tooltipEl.innerHTML =
+          listed
             .map(
               (act) =>
-                `${act.data.name} (${act.startDate.toLocaleDateString()})`,
+                `${escapeHtml(act.data.name)} (${act.startDate.toLocaleDateString()})`,
             )
             .join("<br/>") +
-          (numUnlistedActs > 0 ? `<br/>… and ${numUnlistedActs} more` : "");
-        tooltip.setContent(tooltipContent);
-        tooltip.setLatLng(ev.latlng);
-        map.openTooltip(tooltip);
+          (numUnlisted > 0 ? `<br/>… and ${numUnlisted} more` : "");
+        tooltip.setLngLat(ev.lngLat).addTo(map);
       }
     });
 
-    // Deselect selected activity when background is clicked.
+    map.on("movestart", () => tooltip.remove());
+
     map.on("click", (ev) => {
-      const hoveredIds = refreshHoveredActIds(ev).map((act) => act.data.id);
+      const hits = refreshHoveredActIds(ev.lngLat.lng, ev.lngLat.lat);
+      const hoveredIds = hits.map((a) => a.data.id);
       if (hoveredIds.length === 0) {
         if (selectedActIdRef.current !== undefined) {
           setSelectedActId(undefined);
@@ -178,56 +165,80 @@ export function ViewerMap({
           setMultiselectedActIds([]);
         }
       } else if (hoveredIds.length === 1) {
-        const found = visibleActsRef.current.find(
-          (act) => act.data.id === hoveredIds[0],
-        );
-        setSelectedActId(found?.data.id);
+        setSelectedActId(hoveredIds[0]);
       } else {
         setMultiselectedActIds(hoveredIds);
       }
     });
 
-    // Update URL from map view.
     map.on("moveend", () => {
-      const center = map.getCenter();
-      const hash = `#@${center.lat.toFixed(7)},${center.lng.toFixed(7)},${map.getZoom().toFixed(2)}z`;
+      const c = map.getCenter();
+      const hash = `#@${c.lat.toFixed(7)},${c.lng.toFixed(7)},${map.getZoom().toFixed(2)}z`;
       window.history.replaceState(null, "", hash);
     });
 
-    // One-time: set map view from URL or appropriate bounds.
-    if (window.location.hash !== "") {
-      const numPat = "-?[0-9.]+";
-      const match = window.location.hash.match(
-        `^#@(${numPat}),(${numPat}),(${numPat})z$`,
-      );
-      if (match) {
-        map.setView({ lat: +match[1], lng: +match[2] }, +match[3]);
+    map.on("load", () => {
+      // Find the first label layer at the start of the symbol-only tail.
+      const style = map.getStyle();
+      let labelTailStart = style.layers.length;
+      for (let i = style.layers.length - 1; i >= 0; i--) {
+        if (style.layers[i].type === "symbol") labelTailStart = i;
+        else break;
       }
-    } else {
-      let bounds: L.LatLngBounds | undefined;
-      visibleActsRef.current.forEach((act) => {
-        if (!act.latLngs) return;
-        if (bounds) {
-          bounds.extend(act.latLngs);
-        } else {
-          bounds = L.latLngBounds(act.latLngs);
-        }
+      beforeIdRef.current = style.layers[labelTailStart]?.id;
+
+      // Add the deck.gl overlay (interleaved so labels stay on top).
+      const overlay = new MapboxOverlay({
+        interleaved: true,
+        layers: [],
       });
-      if (bounds) {
-        map.fitBounds(bounds);
-      } else {
-        map.fitWorld();
+      map.addControl(overlay);
+      overlayRef.current = overlay;
+
+      if (!usedHash) {
+        const acts = visibleActsRef.current;
+        const bounds = new maplibregl.LngLatBounds();
+        let any = false;
+        for (const act of acts) {
+          if (!act.latLngs) continue;
+          for (const [lat, lng] of act.latLngs) {
+            bounds.extend([lng, lat]);
+            any = true;
+          }
+        }
+        if (any) map.fitBounds(bounds, { padding: 32, animate: false });
       }
-    }
+
+      setMapReady(true);
+    });
 
     return () => {
       map.remove();
       mapRef.current = null;
-      pathsLayerRef.current = null;
+      overlayRef.current = null;
+      beforeIdRef.current = undefined;
       startMarkerRef.current = null;
       endMarkerRef.current = null;
+      setMapReady(false);
     };
   }, [setHoveredActIds, setMultiselectedActIds, setSelectedActId]);
+
+  // Push a fresh layer set into the deck.gl overlay whenever data changes.
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay || !mapReady) return;
+    overlay.setProps({
+      layers: [
+        new StravaPathsLayer({
+          id: "strava-paths",
+          acts: visibleActs,
+          hoveredIds: hoveredActIds,
+          selectedId: selectedActId,
+          beforeId: beforeIdRef.current,
+        }),
+      ],
+    });
+  }, [mapReady, visibleActs, hoveredActIds, selectedActId]);
 
   // React to selection changes: update markers + fly to.
   useEffect(() => {
@@ -239,34 +250,41 @@ export function ViewerMap({
     const selectedAct = visibleActs.find(
       (act) => act.data.id === selectedActId,
     );
-    if (selectedAct && selectedAct.data.start_latlng) {
-      startMarker.setLatLng(selectedAct.data.start_latlng);
-      startMarker.setOpacity(1);
-    } else {
-      startMarker.setOpacity(0);
+    setMarkerVisible(
+      startMarker,
+      !!(selectedAct && selectedAct.data.start_latlng),
+    );
+    if (selectedAct?.data.start_latlng) {
+      const [lat, lng] = selectedAct.data.start_latlng;
+      startMarker.setLngLat([lng, lat]);
     }
-    if (selectedAct && selectedAct.data.end_latlng) {
-      endMarker.setLatLng(selectedAct.data.end_latlng);
-      endMarker.setOpacity(1);
-    } else {
-      endMarker.setOpacity(0);
+    setMarkerVisible(endMarker, !!(selectedAct && selectedAct.data.end_latlng));
+    if (selectedAct?.data.end_latlng) {
+      const [lat, lng] = selectedAct.data.end_latlng;
+      endMarker.setLngLat([lng, lat]);
     }
 
-    if (selectedAct && selectedAct.latLngs) {
-      map.fitBounds(selectedAct.latLngs);
+    if (selectedAct?.latLngs && selectedAct.latLngs.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      for (const [lat, lng] of selectedAct.latLngs) {
+        bounds.extend([lng, lat]);
+      }
+      map.fitBounds(bounds, { padding: 64 });
     }
   }, [selectedActId, visibleActs]);
 
-  // Notify pathsLayer of state changes.
-  useEffect(() => {
-    pathsLayerRef.current?.notify("acts");
-  }, [visibleActs]);
-  useEffect(() => {
-    pathsLayerRef.current?.notify("hovered");
-  }, [hoveredActIds]);
-  useEffect(() => {
-    pathsLayerRef.current?.notify("selected");
-  }, [selectedActId]);
-
   return <div className="ViewerMap" ref={containerRef} />;
+}
+
+function setMarkerVisible(marker: maplibregl.Marker, visible: boolean) {
+  marker.getElement().style.display = visible ? "" : "none";
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
