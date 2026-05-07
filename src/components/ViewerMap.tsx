@@ -93,7 +93,7 @@ export function ViewerMap({
       const el = document.createElement("div");
       el.className = className;
       if (child) el.appendChild(child);
-      const marker = new maplibregl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
         .setLngLat([0, 0])
         .addTo(map);
       el.style.display = "none";
@@ -250,19 +250,12 @@ export function ViewerMap({
     const selectedAct = visibleActs.find(
       (act) => act.data.id === selectedActId,
     );
-    setMarkerVisible(
-      startMarker,
-      !!(selectedAct && selectedAct.data.start_latlng),
-    );
-    if (selectedAct?.data.start_latlng) {
-      const [lat, lng] = selectedAct.data.start_latlng;
-      startMarker.setLngLat([lng, lat]);
-    }
-    setMarkerVisible(endMarker, !!(selectedAct && selectedAct.data.end_latlng));
-    if (selectedAct?.data.end_latlng) {
-      const [lat, lng] = selectedAct.data.end_latlng;
-      endMarker.setLngLat([lng, lat]);
-    }
+    const firstPoint = selectedAct?.latLngs?.[0];
+    const lastPoint = selectedAct?.latLngs?.[selectedAct.latLngs.length - 1];
+    setMarkerVisible(startMarker, !!firstPoint);
+    if (firstPoint) startMarker.setLngLat([firstPoint[1], firstPoint[0]]);
+    setMarkerVisible(endMarker, !!lastPoint);
+    if (lastPoint) endMarker.setLngLat([lastPoint[1], lastPoint[0]]);
 
     if (selectedAct?.latLngs && selectedAct.latLngs.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
