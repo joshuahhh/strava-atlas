@@ -42,7 +42,7 @@
 }
 
 .ViewerMap-marker-end {
-  display: flex !important;
+  display: flex;
   background: white;
 }
 
