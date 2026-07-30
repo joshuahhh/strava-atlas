@@ -46,17 +46,7 @@ export class Act {
       this.latLngs = latLngs;
       this.mercPoints = latLngs.map(latLngToMerc);
       if (this.mercPoints.length > 0) {
-        let minX = Infinity,
-          minY = Infinity,
-          maxX = -Infinity,
-          maxY = -Infinity;
-        for (const [x, y] of this.mercPoints) {
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
-        this.mercBounds = [minX, minY, maxX, maxY];
+        this.mercBounds = mercBoundsOf(this.mercPoints);
       }
     }
   }
@@ -64,24 +54,90 @@ export class Act {
   // Hit-test in mercator space. `tol` is in mercator units.
   containsMercatorPoint(px: number, py: number, tol: number): boolean {
     if (!this.mercPoints || !this.mercBounds) return false;
-    const [minX, minY, maxX, maxY] = this.mercBounds;
-    if (
-      px < minX - tol ||
-      px > maxX + tol ||
-      py < minY - tol ||
-      py > maxY + tol
-    ) {
-      return false;
-    }
-    const tolSq = tol * tol;
-    const pts = this.mercPoints;
-    for (let i = 0; i < pts.length - 1; i++) {
-      if (pointToSegmentDistanceSq(px, py, pts[i], pts[i + 1]) <= tolSq) {
-        return true;
-      }
-    }
+    return polylineContainsMercatorPoint(
+      this.mercPoints,
+      this.mercBounds,
+      px,
+      py,
+      tol,
+    );
+  }
+}
+
+export function mercBoundsOf(
+  pts: [number, number][],
+): [number, number, number, number] {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const [x, y] of pts) {
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  }
+  return [minX, minY, maxX, maxY];
+}
+
+// Hit-test a polyline in mercator space. `tol` is in mercator units.
+export function polylineContainsMercatorPoint(
+  pts: [number, number][],
+  bounds: [number, number, number, number],
+  px: number,
+  py: number,
+  tol: number,
+): boolean {
+  const [minX, minY, maxX, maxY] = bounds;
+  if (
+    px < minX - tol ||
+    px > maxX + tol ||
+    py < minY - tol ||
+    py > maxY + tol
+  ) {
     return false;
   }
+  const tolSq = tol * tol;
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (pointToSegment(px, py, pts[i], pts[i + 1]).distSq <= tolSq) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Each time the polyline passes within `tol` of (px, py) — i.e. each maximal
+// run of consecutive within-tol segments — yields the vertex index nearest
+// the point during that pass. Indices are in path order.
+export function polylinePassesNear(
+  pts: [number, number][],
+  px: number,
+  py: number,
+  tol: number,
+): number[] {
+  const tolSq = tol * tol;
+  const passes: number[] = [];
+  let inPass = false;
+  let bestSq = Infinity;
+  let bestIdx = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const { distSq, t } = pointToSegment(px, py, pts[i], pts[i + 1]);
+    if (distSq <= tolSq) {
+      if (!inPass) {
+        inPass = true;
+        bestSq = Infinity;
+      }
+      if (distSq < bestSq) {
+        bestSq = distSq;
+        bestIdx = t < 0.5 ? i : i + 1;
+      }
+    } else if (inPass) {
+      passes.push(bestIdx);
+      inPass = false;
+    }
+  }
+  if (inPass) passes.push(bestIdx);
+  return passes;
 }
 
 export function latLngToMerc([lat, lng]: [number, number]): [number, number] {
@@ -91,12 +147,12 @@ export function latLngToMerc([lat, lng]: [number, number]): [number, number] {
   return [x, y];
 }
 
-function pointToSegmentDistanceSq(
+function pointToSegment(
   px: number,
   py: number,
   a: [number, number],
   b: [number, number],
-): number {
+): { distSq: number; t: number } {
   const dx = b[0] - a[0];
   const dy = b[1] - a[1];
   const lenSq = dx * dx + dy * dy;
@@ -110,5 +166,5 @@ function pointToSegmentDistanceSq(
   const cy = a[1] + t * dy;
   const ex = px - cx;
   const ey = py - cy;
-  return ex * ex + ey * ey;
+  return { distSq: ex * ex + ey * ey, t };
 }

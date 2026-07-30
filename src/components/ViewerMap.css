@@ -28,6 +28,22 @@
   white-space: nowrap;
 }
 
+/* Point stats for the selected ride, appended below the hovered-ride list.
+   Negative margins stretch it across the popup-content padding (4px 8px)
+   so it reads as a distinct full-width band. */
+.ViewerMap-tooltip-selected-stats {
+  margin: 4px -8px -4px;
+  padding: 4px 8px;
+  background: rgba(0, 238, 0, 0.25);
+}
+
+/* Divider between passes when the ride visits the hovered spot repeatedly. */
+.ViewerMap-tooltip-selected-stats > div + div {
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  margin-top: 3px;
+  padding-top: 3px;
+}
+
 .ViewerMap-marker-start,
 .ViewerMap-marker-end {
   width: 24px;

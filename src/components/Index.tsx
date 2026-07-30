@@ -1,29 +1,21 @@
 import _ from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { IndexedDBItem, initDB } from "../IndexedDBItem";
+import { clearStore } from "../IndexedDBItem";
 import {
-  fetchActivities,
-  OAuthResponse,
-  StravaSummaryActivity,
-} from "../stravaApi";
+  actDataStorage,
+  db,
+  getValidToken,
+  syncDateStorage,
+  tokenStorage,
+} from "../storage";
+import { fetchActivities, StravaSummaryActivity } from "../stravaApi";
 import { Viewer } from "./Viewer";
 import { Welcome } from "./Welcome";
 
-const db = initDB("strava-atlas");
-
-const actDataStorage = new IndexedDBItem<StravaSummaryActivity[]>(
-  "actData",
-  db,
-);
-const tokenStorage = new IndexedDBItem<OAuthResponse>("token", db);
-const syncDateStorage = new IndexedDBItem<number>("syncDate", db);
-
 // Helper to clear all storage for testing
 (window as any).clearStorage = async () => {
-  await actDataStorage.remove();
-  await tokenStorage.remove();
-  await syncDateStorage.remove();
+  await clearStore(db);
   console.log("All storage cleared. Reload the page to start fresh.");
 };
 
@@ -58,20 +50,10 @@ export function Index() {
 
   const sync = useCallback(
     async ({ fromScratch }: { fromScratch: boolean }) => {
-      let token = await tokenStorage.get();
+      const token = await getValidToken();
       if (!token) {
         window.location.href = "api/redirect-to-auth";
         return;
-      }
-
-      // Refresh the token if necessary
-      if (token.expires_at * 1000 < +new Date()) {
-        const resp = await fetch(
-          `/api/submit-refresh-token?refresh_token=${token.refresh_token}`,
-        );
-        // TODO: error handling
-        token = (await resp.json()) as OAuthResponse;
-        await tokenStorage.set(token);
       }
 
       let afterTime: number | undefined = undefined;

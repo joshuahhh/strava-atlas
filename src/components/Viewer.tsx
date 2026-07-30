@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Act } from "../Act";
-import { StravaSummaryActivity } from "../stravaApi";
+import { StravaStreamSet, StravaSummaryActivity } from "../stravaApi";
+import { getStreams } from "../streams";
 import "./Viewer.css";
 import { ViewerMap } from "./ViewerMap";
 import { ViewerTable } from "./ViewerTable";
@@ -36,6 +37,28 @@ export function Viewer({
   const [filterFromTable, setFilterFromTable] = useState<(act: Act) => boolean>(
     () => () => true,
   );
+
+  // Full-resolution streams for the selected activity, fetched lazily (and
+  // cached in IndexedDB). undefined while loading / unavailable.
+  const [selectedActStreams, setSelectedActStreams] = useState<
+    StravaStreamSet | undefined
+  >(undefined);
+  useEffect(() => {
+    setSelectedActStreams(undefined);
+    if (selectedActId === undefined) return;
+    let cancelled = false;
+    getStreams(selectedActId).then(
+      (streams) => {
+        if (!cancelled && streams) setSelectedActStreams(streams);
+      },
+      (err) => {
+        console.log(`stream fetch failed for activity ${selectedActId}:`, err);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedActId]);
 
   const visibleActs = useMemo(() => {
     const filteredActs = acts.filter(filterFromTable);
@@ -86,6 +109,7 @@ export function Viewer({
           setMultiselectedActIds={setMultiselectedActIds}
           selectedActId={selectedActId}
           setSelectedActId={setSelectedActId}
+          selectedActStreams={selectedActStreams}
         />
       </div>
       <div className="Viewer-right">

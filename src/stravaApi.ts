@@ -72,6 +72,49 @@ export interface StravaSummaryActivity {
   has_kudoed: boolean;
 }
 
+export interface StravaStream<T> {
+  data: T[];
+  series_type: "distance" | "time";
+  original_size: number;
+  resolution: "low" | "medium" | "high";
+}
+
+export interface StravaStreamSet {
+  time?: StravaStream<number>; // seconds since activity start
+  distance?: StravaStream<number>; // meters
+  latlng?: StravaStream<[number, number]>;
+  altitude?: StravaStream<number>; // meters
+  velocity_smooth?: StravaStream<number>; // meters/sec
+  heartrate?: StravaStream<number>; // bpm
+  cadence?: StravaStream<number>; // rpm
+  watts?: StravaStream<number>;
+  temp?: StravaStream<number>; // °C
+  moving?: StravaStream<boolean>;
+  grade_smooth?: StravaStream<number>; // percent
+}
+
+const ALL_STREAM_KEYS =
+  "time,distance,latlng,altitude,velocity_smooth,heartrate,cadence,watts,temp,moving,grade_smooth";
+
+// Fetches all available streams for an activity. Returns {} if the activity
+// has no streams (e.g. manual entries).
+export async function fetchActivityStreams(
+  access_token: string,
+  activityId: number,
+): Promise<StravaStreamSet> {
+  const resp = await fetch(
+    `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=${ALL_STREAM_KEYS}&key_by_type=true`,
+    { headers: { Authorization: `Bearer ${access_token}` } },
+  );
+  if (resp.status === 404) return {};
+  if (!resp.ok) {
+    throw new Error(
+      `fetching streams for activity ${activityId} failed: ${resp.status}`,
+    );
+  }
+  return (await resp.json()) as StravaStreamSet;
+}
+
 export interface OAuthResponse {
   access_token: string;
   refresh_token: string;

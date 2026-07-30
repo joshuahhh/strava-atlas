@@ -17,6 +17,19 @@ export function initDB(dbName: string): Promise<IDBDatabase> {
   });
 }
 
+// Deletes every key in the store (including per-activity stream caches).
+export async function clearStore(
+  dbPromise: Promise<IDBDatabase>,
+): Promise<void> {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const request = transaction.objectStore(STORE_NAME).clear();
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
+}
+
 export class IndexedDBItem<T> {
   constructor(
     readonly key: string,

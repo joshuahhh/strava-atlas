@@ -1,15 +1,25 @@
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Act, latLngToMerc } from "../Act";
+import {
+  Act,
+  latLngToMerc,
+  mercBoundsOf,
+  polylineContainsMercatorPoint,
+  polylinePassesNear,
+} from "../Act";
 import { StravaPathsLayer } from "../pathsLayer";
+import { StravaStreamSet } from "../stravaApi";
 
 import "./ViewerMap.css";
 
 const STYLE_URL =
   "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+// Most passes shown in the selected-ride stats section of the tooltip.
+const MAX_TOOLTIP_PASSES = 4;
 
 interface ViewerMapProps {
   visibleActs: Act[];
@@ -19,6 +29,7 @@ interface ViewerMapProps {
   setMultiselectedActIds: (ids: number[]) => void;
   selectedActId: number | undefined;
   setSelectedActId: (id: number | undefined) => void;
+  selectedActStreams: StravaStreamSet | undefined;
 }
 
 export function ViewerMap({
@@ -29,6 +40,7 @@ export function ViewerMap({
   setMultiselectedActIds,
   selectedActId,
   setSelectedActId,
+  selectedActStreams,
 }: ViewerMapProps) {
   // Refs that mirror the latest props so map handlers (created once) read the current values.
   const visibleActsRef = useRef(visibleActs);
@@ -37,6 +49,23 @@ export function ViewerMap({
   multiselectedActIdsRef.current = multiselectedActIds;
   const selectedActIdRef = useRef(selectedActId);
   selectedActIdRef.current = selectedActId;
+
+  // Full-resolution track for the selected activity, derived from its
+  // streams: mercator points for nearest-point lookup on hover, and a
+  // [lng, lat] path for rendering.
+  const streamTrack = useMemo(() => {
+    const latlng = selectedActStreams?.latlng?.data;
+    if (!latlng || latlng.length === 0 || !selectedActStreams) return undefined;
+    const mercPoints = latlng.map(latLngToMerc);
+    return {
+      streams: selectedActStreams,
+      mercPoints,
+      mercBounds: mercBoundsOf(mercPoints),
+      pathLngLat: latlng.map(([lat, lng]) => [lng, lat] as [number, number]),
+    };
+  }, [selectedActStreams]);
+  const streamTrackRef = useRef(streamTrack);
+  streamTrackRef.current = streamTrack;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -122,9 +151,21 @@ export function ViewerMap({
       const [px, py] = projectMerc(lng, lat);
       const worldPx = 512 * Math.pow(2, map.getZoom());
       const tol = tolPx / worldPx;
-      return visibleActsRef.current.filter((act) =>
-        act.containsMercatorPoint(px, py, tol),
-      );
+      return visibleActsRef.current.filter((act) => {
+        // The selected act displays its full-resolution track, so hit-test
+        // against that (not the summary polyline) once it's loaded.
+        const track = streamTrackRef.current;
+        if (track && act.data.id === selectedActIdRef.current) {
+          return polylineContainsMercatorPoint(
+            track.mercPoints,
+            track.mercBounds,
+            px,
+            py,
+            tol,
+          );
+        }
+        return act.containsMercatorPoint(px, py, tol);
+      });
     }
 
     function refreshHoveredActIds(lng: number, lat: number): Act[] {
@@ -136,21 +177,52 @@ export function ViewerMap({
     map.on("mousemove", (ev) => {
       if (map.isMoving()) return;
       const hoveredActs = refreshHoveredActIds(ev.lngLat.lng, ev.lngLat.lat);
+
       if (hoveredActs.length === 0) {
         tooltip.remove();
-      } else {
-        const listed = hoveredActs.slice(0, 2);
-        const numUnlisted = hoveredActs.length - 2;
-        tooltipEl.innerHTML =
-          listed
-            .map(
-              (act) =>
-                `${escapeHtml(act.data.name)} (${act.startDate.toLocaleDateString()})`,
-            )
-            .join("<br/>") +
-          (numUnlisted > 0 ? `<br/>… and ${numUnlisted} more` : "");
-        tooltip.setLngLat(ev.lngLat).addTo(map);
+        return;
       }
+
+      const listed = hoveredActs.slice(0, 2);
+      const numUnlisted = hoveredActs.length - 2;
+      let html =
+        listed
+          .map(
+            (act) =>
+              `${escapeHtml(act.data.name)} (${act.startDate.toLocaleDateString()})`,
+          )
+          .join("<br/>") +
+        (numUnlisted > 0 ? `<br/>… and ${numUnlisted} more` : "");
+
+      // If the selected ride is among the hovered (and its streams are
+      // loaded), append stats for each pass it makes near the cursor —
+      // an out-and-back ride visits the same spot at multiple times.
+      const selectedAct = hoveredActs.find(
+        (a) => a.data.id === selectedActIdRef.current,
+      );
+      const track = streamTrackRef.current;
+      if (selectedAct && track) {
+        const [px, py] = projectMerc(ev.lngLat.lng, ev.lngLat.lat);
+        const tol = 7 / (512 * Math.pow(2, map.getZoom()));
+        const passes = polylinePassesNear(track.mercPoints, px, py, tol);
+        const blocks = passes
+          .slice(0, MAX_TOOLTIP_PASSES)
+          .map((i) => pointDescriptionHtml(selectedAct, track.streams, i))
+          .filter((block) => block !== "");
+        if (blocks.length > 0) {
+          const numUnlistedPasses = passes.length - MAX_TOOLTIP_PASSES;
+          html +=
+            `<div class="ViewerMap-tooltip-selected-stats">` +
+            blocks.map((block) => `<div>${block}</div>`).join("") +
+            (numUnlistedPasses > 0
+              ? `<div>… and ${numUnlistedPasses} more times</div>`
+              : "") +
+            `</div>`;
+        }
+      }
+
+      tooltipEl.innerHTML = html;
+      tooltip.setLngLat(ev.lngLat).addTo(map);
     });
 
     map.on("movestart", () => tooltip.remove());
@@ -234,11 +306,12 @@ export function ViewerMap({
           acts: visibleActs,
           hoveredIds: hoveredActIds,
           selectedId: selectedActId,
+          selectedPath: streamTrack?.pathLngLat,
           beforeId: beforeIdRef.current,
         }),
       ],
     });
-  }, [mapReady, visibleActs, hoveredActIds, selectedActId]);
+  }, [mapReady, visibleActs, hoveredActIds, selectedActId, streamTrack]);
 
   // React to selection changes: update markers + fly to.
   useEffect(() => {
@@ -271,6 +344,61 @@ export function ViewerMap({
 
 function setMarkerVisible(marker: maplibregl.Marker, visible: boolean) {
   marker.getElement().style.display = visible ? "" : "none";
+}
+
+// Tooltip contents for one stream point: clock time + elapsed time, then
+// whatever point stats the activity recorded. Returns "" if there's nothing
+// to show (e.g. no time stream).
+function pointDescriptionHtml(
+  act: Act,
+  streams: StravaStreamSet,
+  i: number,
+): string {
+  const lines: string[] = [];
+
+  const timeSec = streams.time?.data[i];
+  if (timeSec !== undefined) {
+    // start_date_local is the ride's wall time with a fake "Z", so adding
+    // the offset and formatting in UTC yields the ride's local time.
+    const t = new Date(
+      new Date(act.data.start_date_local).getTime() + timeSec * 1000,
+    );
+    const clock = t.toLocaleTimeString([], {
+      timeZone: "UTC",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    lines.push(`${clock} (${formatElapsed(timeSec)} in)`);
+  }
+
+  const stats: string[] = [];
+  const velocity = streams.velocity_smooth?.data[i];
+  if (velocity !== undefined) {
+    stats.push(`${(velocity * 2.23694).toFixed(1)} mph`);
+  }
+  const altitude = streams.altitude?.data[i];
+  if (altitude !== undefined) {
+    stats.push(`${Math.round(altitude * 3.28084)} ft`);
+  }
+  const grade = streams.grade_smooth?.data[i];
+  if (grade !== undefined) {
+    stats.push(`${grade.toFixed(1)}%`);
+  }
+  const heartrate = streams.heartrate?.data[i];
+  if (heartrate !== undefined) {
+    stats.push(`${Math.round(heartrate)} bpm`);
+  }
+  if (stats.length > 0) lines.push(stats.join(" · "));
+
+  return lines.join("<br/>");
+}
+
+function formatElapsed(sec: number): string {
+  const s = Math.round(sec);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 function escapeHtml(s: string): string {

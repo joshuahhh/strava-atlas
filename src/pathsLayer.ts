@@ -171,7 +171,6 @@ class HeatmapPathLayer<DataT = Act> extends PathLayer<
     const h = gl.drawingBufferHeight;
     const s = this.state as any;
 
-
     // Lazy / resize FBO
     if (!s.fbo || s.fboW !== w || s.fboH !== h) {
       s.fbo?.destroy();
@@ -267,7 +266,6 @@ class HeatmapPathLayer<DataT = Act> extends PathLayer<
     model.parameters = origParams;
     fbPass.end();
 
-
     // Pass 2: apply the colormap onto MapLibre's framebuffer.
     // After pass.end() luma.gl restores the prior framebuffer binding (the
     // one deck.gl was rendering into), so plain GL calls now target it.
@@ -275,7 +273,7 @@ class HeatmapPathLayer<DataT = Act> extends PathLayer<
       .overallAlpha;
     gl.useProgram(state.colormapProgram);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, (state.fboTex.handle as WebGLTexture));
+    gl.bindTexture(gl.TEXTURE_2D, state.fboTex.handle as WebGLTexture);
     gl.uniform1i(state.uTex, 0);
     gl.uniform1f(state.uEachAlpha, EACH_ACT_ALPHA);
     gl.uniform1f(state.uOverall, overallAlpha ?? 1.0);
@@ -295,6 +293,8 @@ interface StravaPathsLayerProps {
   acts: Act[];
   hoveredIds: number[];
   selectedId?: number;
+  /** Full-resolution [lng, lat] path for the selected act, if available. */
+  selectedPath?: [number, number][];
   beforeId?: string;
 }
 
@@ -302,7 +302,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
   static override layerName = "StravaPathsLayer";
 
   renderLayers(): Layer[] {
-    const { acts, hoveredIds, selectedId } = this.props;
+    const { acts, hoveredIds, selectedId, selectedPath } = this.props;
     const hoveredSet = new Set(hoveredIds);
     const hoveredOnly = acts.filter(
       (a) => hoveredSet.has(a.data.id) && a.data.id !== selectedId,
@@ -315,11 +315,18 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
     const getPath = (a: Act): [number, number][] =>
       a.latLngs ? a.latLngs.map(([lat, lng]) => [lng, lat]) : [];
 
+    // The selected act uses its full-resolution track when available —
+    // including in the heatmap, so its summary polyline doesn't show as a
+    // parallel ghost where the two diverge. All other acts stay on the
+    // simplified summary polyline.
+    const getPathMaybeFull = (a: Act): [number, number][] =>
+      a === selectedAct && selectedPath ? selectedPath : getPath(a);
+
     const layers: (Layer | undefined | false | null)[] = [
       new HeatmapPathLayer({
         id: `${this.props.id}-heatmap`,
         data: acts,
-        getPath,
+        getPath: getPathMaybeFull,
         getColor: COLOR_WHITE,
         getWidth: HEATMAP_WIDTH_PX,
         widthUnits: "pixels",
@@ -329,7 +336,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
         getPathIndex: (_a: Act, info: { index: number }) => info.index,
         overallAlpha: selectedId !== undefined ? 0.5 : 1.0,
         updateTriggers: {
-          getPath: acts,
+          getPath: [acts, selectedPath],
           getPathIndex: acts,
         },
       }),
@@ -337,12 +344,13 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
         new PathLayer<Act>({
           id: `${this.props.id}-outline-halo`,
           data: outlineActs,
-          getPath,
+          getPath: getPathMaybeFull,
           getColor: COLOR_BLACK,
           getWidth: OUTLINE_OUTER_PX,
           widthUnits: "pixels",
           capRounded: true,
           jointRounded: true,
+          updateTriggers: { getPath: selectedPath },
         }),
       hoveredOnly.length > 0 &&
         new PathLayer<Act>({
@@ -359,12 +367,13 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
         new PathLayer<Act>({
           id: `${this.props.id}-outline-selected`,
           data: [selectedAct],
-          getPath,
+          getPath: getPathMaybeFull,
           getColor: COLOR_SELECTED,
           getWidth: OUTLINE_INNER_PX,
           widthUnits: "pixels",
           capRounded: true,
           jointRounded: true,
+          updateTriggers: { getPath: selectedPath },
         }),
     ];
     return layers.filter(Boolean) as Layer[];
