@@ -46,9 +46,42 @@
   font-size: 11px;
 }
 
-.ViewerTableRow-strava-link {
+/* Fixed-width slot at the end of the stat line, shared by the indicator
+   badges and the Strava link. Both are absolutely positioned within it, so
+   they swap on hover without the row reflowing. Wide enough for two badges. */
+.ViewerTableRow-end {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  width: 30px;
+  height: 14px;
+}
+
+.ViewerTableRow-badges {
+  position: absolute;
+  right: 0;
+  top: 0;
+  white-space: nowrap;
+}
+
+.ViewerTableRow.hovered-directly .ViewerTableRow-badges {
   visibility: hidden;
-  margin-left: 10px;
+}
+
+/* Overrides .app-icon's 24px sizing (incl. its min-width). */
+.ViewerTableRow-badge {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  opacity: 0.5;
+}
+
+.ViewerTableRow-strava-link {
+  position: absolute;
+  right: 0;
+  top: 0;
+  visibility: hidden;
 }
 
 .ViewerTableRow.hovered-directly .ViewerTableRow-strava-link {
@@ -57,4 +90,5 @@
 
 .ViewerTableRow-strava-link-img {
   height: 14px;
+  display: block;
 }

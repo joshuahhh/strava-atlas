@@ -9,11 +9,10 @@
 
 .Viewer-right {
   /* Contents are fixed-width: 20 row padding + 24 icon + 10 + 121 date
-     + 3x61 stats + 24 for the hover-revealed Strava link (which occupies
-     space even when hidden). Only the activity-name line is elastic, so
-     there's no point being flexible here. Narrow windows switch to the
-     portrait layout below. */
-  width: 382px;
+     + 3x61 stats + 30 for the end slot (indicator badges / Strava link).
+     Only the activity-name line is elastic, so there's no point being
+     flexible here. Narrow windows switch to the portrait layout below. */
+  width: 388px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -50,4 +49,25 @@
 
 .Viewer-advanced-controls {
   padding-left: 15px;
+}
+
+.Viewer-advanced-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* Same treatment as .ViewerTableRow-badge, so the toggle shows exactly the
+   mark it controls. Compound selector to outrank .app-icon's 24px sizing
+   (incl. its min-width), which is loaded after this file. */
+.Viewer-advanced-checkbox .Viewer-advanced-badge {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+  opacity: 0.5;
+}
+
+.Viewer-advanced-buttons {
+  margin-top: 5px;
 }

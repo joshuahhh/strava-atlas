@@ -13,9 +13,11 @@ import { fetchActivities, StravaSummaryActivity } from "../stravaApi";
 import { Viewer } from "./Viewer";
 import { Welcome } from "./Welcome";
 
-// Helper to clear all storage for testing
+// Helper to clear all storage for testing: activity/token/stream data in
+// IndexedDB, plus UI settings in localStorage.
 (window as any).clearStorage = async () => {
   await clearStore(db);
+  localStorage.clear();
   console.log("All storage cleared. Reload the page to start fresh.");
 };
 

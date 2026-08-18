@@ -25,6 +25,8 @@ interface ViewerTableProps {
   selectedActId: number | undefined;
   setSelectedActId: Dispatch<SetStateAction<number | undefined>>;
   setFilterFromTable: Dispatch<SetStateAction<(act: Act) => boolean>>;
+  showPrivateBadge: boolean;
+  showPhotoBadge: boolean;
 }
 
 export function ViewerTable({
@@ -35,6 +37,8 @@ export function ViewerTable({
   selectedActId,
   setSelectedActId,
   setFilterFromTable,
+  showPrivateBadge,
+  showPhotoBadge,
 }: ViewerTableProps) {
   const [typeFilter, setTypeFilter] = useState<string>("All");
   const [nameFilter, setNameFilter] = useState<string | undefined>(undefined);
@@ -245,6 +249,8 @@ export function ViewerTable({
               key={act.data.id}
               act={act}
               isVisible={visibleActs.includes(act)}
+              showPrivateBadge={showPrivateBadge}
+              showPhotoBadge={showPhotoBadge}
               isHovered={hoveredActIds.includes(act.data.id)}
               isHoveredDirectly={
                 hoveredActIds.includes(act.data.id) && mouseIsHovering

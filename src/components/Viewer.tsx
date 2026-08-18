@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Act } from "../Act";
 import { StravaStreamSet, StravaSummaryActivity } from "../stravaApi";
 import { getStreams } from "../streams";
+import { useLocalStorageState } from "../useLocalStorageState";
 import "./Viewer.css";
 import { ViewerMap } from "./ViewerMap";
 import { ViewerTable } from "./ViewerTable";
@@ -36,6 +37,15 @@ export function Viewer({
   );
   const [filterFromTable, setFilterFromTable] = useState<(act: Act) => boolean>(
     () => () => true,
+  );
+
+  const [showPrivateBadge, setShowPrivateBadge] = useLocalStorageState(
+    "showPrivateBadge",
+    true,
+  );
+  const [showPhotoBadge, setShowPhotoBadge] = useLocalStorageState(
+    "showPhotoBadge",
+    true,
   );
 
   // Full-resolution streams for the selected activity, fetched lazily (and
@@ -121,6 +131,8 @@ export function Viewer({
           selectedActId={selectedActId}
           setSelectedActId={setSelectedActId}
           setFilterFromTable={setFilterFromTable}
+          showPrivateBadge={showPrivateBadge}
+          showPhotoBadge={showPhotoBadge}
         />
         <div className="Viewer-controls">
           <div>
@@ -143,22 +155,44 @@ export function Viewer({
                 <button onClick={() => sync({ fromScratch: false })}>
                   Sync now
                 </button>
-                <details className="Viewer-advanced-details">
-                  <summary>Advanced</summary>
-                  <div className="Viewer-advanced-controls">
-                    <button onClick={() => sync({ fromScratch: true })}>
-                      Sync from scratch
-                    </button>
-                    {selectedActId !== undefined && (
-                      <button onClick={syncFromSelected}>
-                        Sync from selected
-                      </button>
-                    )}
-                  </div>
-                </details>
               </>
             )}
           </div>
+          <details className="Viewer-advanced-details">
+            <summary>Advanced</summary>
+            <div className="Viewer-advanced-controls">
+              <label className="Viewer-advanced-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showPrivateBadge}
+                  onChange={(ev) => setShowPrivateBadge(ev.target.checked)}
+                />
+                <div className="Viewer-advanced-badge app-icon icon-private" />
+                Mark private activities
+              </label>
+              <label className="Viewer-advanced-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showPhotoBadge}
+                  onChange={(ev) => setShowPhotoBadge(ev.target.checked)}
+                />
+                <div className="Viewer-advanced-badge app-icon icon-photo" />
+                Mark activities with photos
+              </label>
+              {!actDataSync && (
+                <div className="Viewer-advanced-buttons">
+                  <button onClick={() => sync({ fromScratch: true })}>
+                    Sync from scratch
+                  </button>
+                  {selectedActId !== undefined && (
+                    <button onClick={syncFromSelected}>
+                      Sync from selected
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       </div>
     </div>

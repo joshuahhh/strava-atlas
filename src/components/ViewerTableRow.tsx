@@ -33,6 +33,8 @@ function formatDuration(secs: number): ReactNode {
 interface ViewerTableRowProps {
   act: Act;
   isVisible: boolean;
+  showPrivateBadge: boolean;
+  showPhotoBadge: boolean;
   isHovered: boolean;
   isHoveredDirectly: boolean;
   isSelected: boolean;
@@ -44,6 +46,8 @@ interface ViewerTableRowProps {
 function ViewerTableRowImpl({
   act,
   isVisible,
+  showPrivateBadge,
+  showPhotoBadge,
   isHovered,
   isHoveredDirectly,
   isSelected,
@@ -51,6 +55,10 @@ function ViewerTableRowImpl({
   onHoverOut,
   onActClick,
 }: ViewerTableRowProps) {
+  // total_photo_count includes Instagram photos; photo_count is Strava-native
+  // only. We want "does this activity have pictures at all".
+  const photoCount = act.data.total_photo_count;
+
   return (
     <div
       id={`ViewerTableRow-${act.data.id}`}
@@ -92,15 +100,34 @@ function ViewerTableRowImpl({
           {(act.data.total_elevation_gain * 3.28084).toFixed(0)}
           <div className="ViewerTableRow-unit">ft</div>
         </div>
-        <a
-          className="ViewerTableRow-strava-link"
-          href={`https://www.strava.com/activities/${act.data.id}`}
-          onClick={(ev) => ev.stopPropagation()}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img className="ViewerTableRow-strava-link-img" src="strava-2.svg" />
-        </a>
+        <div className="ViewerTableRow-end">
+          <div className="ViewerTableRow-badges">
+            {showPrivateBadge && act.data.private && (
+              <div
+                className="ViewerTableRow-badge app-icon icon-private"
+                title="Private activity"
+              />
+            )}
+            {showPhotoBadge && photoCount > 0 && (
+              <div
+                className="ViewerTableRow-badge app-icon icon-photo"
+                title={`${photoCount} photo${photoCount === 1 ? "" : "s"}`}
+              />
+            )}
+          </div>
+          <a
+            className="ViewerTableRow-strava-link"
+            href={`https://www.strava.com/activities/${act.data.id}`}
+            onClick={(ev) => ev.stopPropagation()}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              className="ViewerTableRow-strava-link-img"
+              src="strava-2.svg"
+            />
+          </a>
+        </div>
       </div>
     </div>
   );
