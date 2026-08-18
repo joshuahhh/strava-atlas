@@ -37,6 +37,13 @@
   margin-top: 15px;
 }
 
+/* Reserve room for the absolutely-positioned download selector and
+   open/close toggle at the header's right edge, so the full-width name
+   filter input doesn't render on top of them. */
+.ViewerTable-fake-row .ViewerTableRow-name {
+  padding-right: 60px;
+}
+
 .ViewerTable-name-filter-container {
   position: relative;
 }
@@ -86,10 +93,14 @@
   border: none;
   appearance: none;
   -webkit-appearance: none;
-  width: 10px;
-  margin: 5px;
+  /* Explicit width: with appearance:none the select would otherwise size to
+     its widest option ("... as GeoJSON"). Just wide enough for the ⤓. */
+  width: 20px;
+  text-align: center;
+  text-align-last: center;
   position: absolute;
-  right: 40px;
+  top: 5px;
+  right: 36px;
   font-family: inherit;
 }
 

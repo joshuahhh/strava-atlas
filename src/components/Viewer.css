@@ -8,8 +8,13 @@
 }
 
 .Viewer-right {
-  max-width: 30vw;
-  min-width: 30vw;
+  /* Contents are fixed-width: 20 row padding + 24 icon + 10 + 121 date
+     + 3x61 stats + 24 for the hover-revealed Strava link (which occupies
+     space even when hidden). Only the activity-name line is elastic, so
+     there's no point being flexible here. Narrow windows switch to the
+     portrait layout below. */
+  width: 382px;
+  flex: none;
   display: flex;
   flex-direction: column;
 }
@@ -20,8 +25,7 @@
   }
 
   .Viewer-right {
-    max-width: none;
-    min-width: none;
+    width: auto;
     max-height: 40vh;
   }
 }
