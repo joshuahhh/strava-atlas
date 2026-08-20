@@ -41,7 +41,7 @@
    open/close toggle at the header's right edge, so the full-width name
    filter input doesn't render on top of them. */
 .ViewerTable-fake-row .ViewerTableRow-name {
-  padding-right: 60px;
+  padding-right: 44px;
 }
 
 .ViewerTable-name-filter-container {

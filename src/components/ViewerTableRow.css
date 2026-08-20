@@ -1,6 +1,9 @@
 .ViewerTableRow {
   cursor: pointer;
-  padding: 5px 10px;
+  /* Extra padding on the right so row content clears a macOS overlay
+     scrollbar, which expands from a ~7px sliver to a ~15px opaque track when
+     the pointer is over the scroll area. */
+  padding: 5px 16px 5px 10px;
   border-bottom: 1px solid rgb(240, 240, 245);
   display: flex;
 }

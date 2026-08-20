@@ -8,11 +8,11 @@
 }
 
 .Viewer-right {
-  /* Contents are fixed-width: 20 row padding + 24 icon + 10 + 121 date
+  /* Contents are fixed-width: 26 row padding + 24 icon + 10 + 121 date
      + 3x61 stats + 30 for the end slot (indicator badges / Strava link).
      Only the activity-name line is elastic, so there's no point being
      flexible here. Narrow windows switch to the portrait layout below. */
-  width: 388px;
+  width: 394px;
   flex: none;
   display: flex;
   flex-direction: column;
