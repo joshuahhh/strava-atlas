@@ -19,6 +19,11 @@ To run your own copy of Strava Atlas:
    STRAVA_CLIENT_SECRET=0123456789abcdef0123456789abcdef01234567
    ```
 
+   Optionally, `ALLOWED_RETURN_ORIGINS` is a comma-separated list of origins
+   (e.g. `https://example.com`) that other front-ends may run the Strava auth
+   flow from, via `/api/redirect-to-auth?return_to=...`. In development,
+   localhost origins are always allowed.
+
 3. Run `yarn` to install dependencies.
 
 4. Run `yarn build` to build the application.
