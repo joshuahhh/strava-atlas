@@ -6,9 +6,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Act,
   latLngToMerc,
+  latLngsToFlatLngLat,
+  lngLatPathToMerc,
   mercBoundsOf,
   polylineContainsMercatorPoint,
   polylinePassesNear,
+  type LngLatPath,
 } from "../Act";
 import { StravaPathsLayer } from "../pathsLayer";
 import { StravaStreamSet } from "../stravaApi";
@@ -51,17 +54,18 @@ export function ViewerMap({
   selectedActIdRef.current = selectedActId;
 
   // Full-resolution track for the selected activity, derived from its
-  // streams: mercator points for nearest-point lookup on hover, and a
-  // [lng, lat] path for rendering.
+  // streams: mercator points for nearest-point lookup on hover, and a flat
+  // [lng, lat, ...] path for rendering.
   const streamTrack = useMemo(() => {
     const latlng = selectedActStreams?.latlng?.data;
     if (!latlng || latlng.length === 0 || !selectedActStreams) return undefined;
-    const mercPoints = latlng.map(latLngToMerc);
+    const pathLngLat = latLngsToFlatLngLat(latlng);
+    const mercPoints = lngLatPathToMerc(pathLngLat);
     return {
       streams: selectedActStreams,
       mercPoints,
       mercBounds: mercBoundsOf(mercPoints),
-      pathLngLat: latlng.map(([lat, lng]) => [lng, lat] as [number, number]),
+      pathLngLat,
     };
   }, [selectedActStreams]);
   const streamTrackRef = useRef(streamTrack);
@@ -272,11 +276,9 @@ export function ViewerMap({
         const bounds = new maplibregl.LngLatBounds();
         let any = false;
         for (const act of acts) {
-          if (!act.latLngs) continue;
-          for (const [lat, lng] of act.latLngs) {
-            bounds.extend([lng, lat]);
-            any = true;
-          }
+          if (!act.lngLats) continue;
+          extendBounds(bounds, act.lngLats);
+          any = any || act.lngLats.length > 0;
         }
         if (any) map.fitBounds(bounds, { padding: 32, animate: false });
       }
@@ -323,18 +325,17 @@ export function ViewerMap({
     const selectedAct = visibleActs.find(
       (act) => act.data.id === selectedActId,
     );
-    const firstPoint = selectedAct?.latLngs?.[0];
-    const lastPoint = selectedAct?.latLngs?.[selectedAct.latLngs.length - 1];
-    setMarkerVisible(startMarker, !!firstPoint);
-    if (firstPoint) startMarker.setLngLat([firstPoint[1], firstPoint[0]]);
-    setMarkerVisible(endMarker, !!lastPoint);
-    if (lastPoint) endMarker.setLngLat([lastPoint[1], lastPoint[0]]);
+    const path = selectedAct?.lngLats;
+    const hasPoints = !!path && path.length > 0;
+    setMarkerVisible(startMarker, hasPoints);
+    setMarkerVisible(endMarker, hasPoints);
+    if (path && hasPoints) {
+      const n = path.length;
+      startMarker.setLngLat([path[0], path[1]]);
+      endMarker.setLngLat([path[n - 2], path[n - 1]]);
 
-    if (selectedAct?.latLngs && selectedAct.latLngs.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
-      for (const [lat, lng] of selectedAct.latLngs) {
-        bounds.extend([lng, lat]);
-      }
+      extendBounds(bounds, path);
       map.fitBounds(bounds, { padding: 64 });
     }
   }, [selectedActId, visibleActs]);
@@ -344,6 +345,12 @@ export function ViewerMap({
 
 function setMarkerVisible(marker: maplibregl.Marker, visible: boolean) {
   marker.getElement().style.display = visible ? "" : "none";
+}
+
+function extendBounds(bounds: maplibregl.LngLatBounds, path: LngLatPath) {
+  for (let i = 0; i < path.length; i += 2) {
+    bounds.extend([path[i], path[i + 1]]);
+  }
 }
 
 // Tooltip contents for one stream point: clock time + elapsed time, then

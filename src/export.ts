@@ -31,14 +31,19 @@ function geoJSONToGPX(fc: GeoJSON.FeatureCollection): string {
 }
 
 function actToGeoJSONFeature(act: Act): GeoJSON.Feature | undefined {
-  if (!act.latLngs) {
+  const path = act.lngLats;
+  if (!path) {
     return undefined;
+  }
+  const coordinates: GeoJSON.Position[] = [];
+  for (let i = 0; i < path.length; i += 2) {
+    coordinates.push([path[i], path[i + 1]]);
   }
   return {
     type: "Feature",
     geometry: {
       type: "LineString",
-      coordinates: act.latLngs.map(([lat, lng]) => [lng, lat]),
+      coordinates,
     },
     properties: {
       id: act.data.id,

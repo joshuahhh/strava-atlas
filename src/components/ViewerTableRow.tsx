@@ -79,7 +79,7 @@ function ViewerTableRowImpl({
       <div className="ViewerTableRow-right">
         <div className="ViewerTableRow-name">
           {act.data.name}
-          {act.latLngs === undefined && (
+          {act.lngLats === undefined && (
             <>
               {" "}
               <span className="ViewerTableRow-no-map">[no map]</span>

@@ -2,7 +2,7 @@ import { CompositeLayer, type Layer } from "@deck.gl/core";
 import { PathLayer, type PathLayerProps } from "@deck.gl/layers";
 import type { Framebuffer, Texture } from "@luma.gl/core";
 
-import { Act } from "./Act";
+import { Act, type LngLatPath } from "./Act";
 
 const EACH_ACT_ALPHA = 0.2;
 const HEATMAP_WIDTH_PX = 4;
@@ -13,6 +13,8 @@ const COLOR_WHITE: [number, number, number, number] = [255, 255, 255, 255];
 const COLOR_BLACK: [number, number, number, number] = [0, 0, 0, 255];
 const COLOR_HOVER: [number, number, number, number] = [238, 238, 0, 255];
 const COLOR_SELECTED: [number, number, number, number] = [0, 238, 0, 255];
+
+const EMPTY_PATH: LngLatPath = new Float64Array(0);
 
 const colormapVS = `#version 300 es
 precision highp float;
@@ -293,8 +295,8 @@ interface StravaPathsLayerProps {
   acts: Act[];
   hoveredIds: number[];
   selectedId?: number;
-  /** Full-resolution [lng, lat] path for the selected act, if available. */
-  selectedPath?: [number, number][];
+  /** Full-resolution flat [lng, lat, ...] path for the selected act, if available. */
+  selectedPath?: LngLatPath;
   beforeId?: string;
 }
 
@@ -312,14 +314,13 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
       ? [...hoveredOnly, selectedAct]
       : hoveredOnly;
 
-    const getPath = (a: Act): [number, number][] =>
-      a.latLngs ? a.latLngs.map(([lat, lng]) => [lng, lat]) : [];
+    const getPath = (a: Act): LngLatPath => a.lngLats ?? EMPTY_PATH;
 
     // The selected act uses its full-resolution track when available —
     // including in the heatmap, so its summary polyline doesn't show as a
     // parallel ghost where the two diverge. All other acts stay on the
     // simplified summary polyline.
-    const getPathMaybeFull = (a: Act): [number, number][] =>
+    const getPathMaybeFull = (a: Act): LngLatPath =>
       a === selectedAct && selectedPath ? selectedPath : getPath(a);
 
     const layers: (Layer | undefined | false | null)[] = [
@@ -327,6 +328,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
         id: `${this.props.id}-heatmap`,
         data: acts,
         getPath: getPathMaybeFull,
+        positionFormat: "XY",
         getColor: COLOR_WHITE,
         getWidth: HEATMAP_WIDTH_PX,
         widthUnits: "pixels",
@@ -345,6 +347,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
           id: `${this.props.id}-outline-halo`,
           data: outlineActs,
           getPath: getPathMaybeFull,
+          positionFormat: "XY",
           getColor: COLOR_BLACK,
           getWidth: OUTLINE_OUTER_PX,
           widthUnits: "pixels",
@@ -357,6 +360,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
           id: `${this.props.id}-outline-hovered`,
           data: hoveredOnly,
           getPath,
+          positionFormat: "XY",
           getColor: COLOR_HOVER,
           getWidth: OUTLINE_INNER_PX,
           widthUnits: "pixels",
@@ -368,6 +372,7 @@ export class StravaPathsLayer extends CompositeLayer<StravaPathsLayerProps> {
           id: `${this.props.id}-outline-selected`,
           data: [selectedAct],
           getPath: getPathMaybeFull,
+          positionFormat: "XY",
           getColor: COLOR_SELECTED,
           getWidth: OUTLINE_INNER_PX,
           widthUnits: "pixels",
