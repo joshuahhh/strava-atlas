@@ -124,7 +124,7 @@ export interface OAuthResponse {
 export async function fetchActivities(
   access_token: string,
   onProgress?: (actData: StravaSummaryActivity[]) => void,
-  per_page = 50,
+  per_page = 200, // Strava's max
   after?: number,
 ): Promise<StravaSummaryActivity[]> {
   let actData = [];
