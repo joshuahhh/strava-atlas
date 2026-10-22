@@ -24,11 +24,11 @@ To run your own copy of Strava Atlas:
    flow from, via `/api/redirect-to-auth?return_to=...`. In development,
    localhost origins are always allowed.
 
-3. Run `yarn` to install dependencies.
+3. Run `pnpm install` to install dependencies. (If you don't have pnpm, `corepack enable` or `brew install pnpm` will get it.)
 
-4. Run `yarn build` to build the application.
+4. Run `pnpm build` to build the application.
 
-5. Finally, run `yarn start` to start the server. Strava Atlas should be available at http://localhost:5000/.
+5. Finally, run `pnpm start` to start the server. Strava Atlas should be available at http://localhost:5000/.
 
 Deploying a copy of Strava Atlas on a service like Heroku should be relatively straighforward. Tips for specific platforms:
 

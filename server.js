@@ -168,7 +168,7 @@
       console.error(
         "running in production mode, but no PORT env variable! exiting",
       );
-      console.error("  [ did you mean to `npm run dev`? ]");
+      console.error("  [ did you mean to `pnpm dev`? ]");
       process.exit(1);
     }
     console.log(`running in production mode on ${PORT}`);

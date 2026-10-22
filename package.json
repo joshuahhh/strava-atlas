@@ -13,6 +13,7 @@
     "@deck.gl/core": "^9.3.2",
     "@deck.gl/layers": "^9.3.2",
     "@deck.gl/mapbox": "^9.3.2",
+    "@luma.gl/core": "~9.3.3",
     "@mapbox/polyline": "^1.2.1",
     "@placemarkio/tokml": "^0.3.5",
     "classnames": "^2.5.1",
@@ -41,5 +42,6 @@
     "prettier-plugin-organize-imports": "^4.1.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.3"
-  }
+  },
+  "packageManager": "pnpm@9.12.0"
 }
