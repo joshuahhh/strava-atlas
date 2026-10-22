@@ -30,6 +30,21 @@ export async function clearStore(
   });
 }
 
+// Deletes every key that starts with `prefix`.
+export async function deleteKeysWithPrefix(
+  dbPromise: Promise<IDBDatabase>,
+  prefix: string,
+): Promise<void> {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const range = IDBKeyRange.bound(prefix, prefix + "￿");
+    const request = transaction.objectStore(STORE_NAME).delete(range);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
+}
+
 export class IndexedDBItem<T> {
   constructor(
     readonly key: string,

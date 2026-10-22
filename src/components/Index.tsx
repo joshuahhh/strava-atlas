@@ -10,6 +10,7 @@ import {
   tokenStorage,
 } from "../storage";
 import { fetchActivities, StravaSummaryActivity } from "../stravaApi";
+import { clearStreams } from "../streams";
 import { Viewer } from "./Viewer";
 import { Welcome } from "./Welcome";
 
@@ -57,6 +58,8 @@ export function Index() {
         window.location.href = "api/redirect-to-auth";
         return;
       }
+
+      if (fromScratch) await clearStreams();
 
       let afterTime: number | undefined = undefined;
       const existingActData = actDataRef.current;

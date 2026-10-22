@@ -1,6 +1,10 @@
-import { IndexedDBItem } from "./IndexedDBItem";
+import { deleteKeysWithPrefix, IndexedDBItem } from "./IndexedDBItem";
 import { db, getValidToken } from "./storage";
 import { fetchActivityStreams, StravaStreamSet } from "./stravaApi";
+
+function streamsItem(actId: number) {
+  return new IndexedDBItem<StravaStreamSet>(`streams/${actId}`, db);
+}
 
 // In-memory cache doubling as in-flight dedup, so a given activity is fetched
 // from the API at most once per session (and at most once ever, via IndexedDB).
@@ -21,7 +25,7 @@ export function getStreams(actId: number): Promise<StravaStreamSet | null> {
 async function getStreamsUncached(
   actId: number,
 ): Promise<StravaStreamSet | null> {
-  const item = new IndexedDBItem<StravaStreamSet>(`streams/${actId}`, db);
+  const item = streamsItem(actId);
   const stored = await item.get();
   if (stored) return stored;
 
@@ -31,4 +35,16 @@ async function getStreamsUncached(
   const streams = await fetchActivityStreams(token.access_token, actId);
   await item.set(streams);
   return streams;
+}
+
+// Forgets cached streams (in memory and IndexedDB) so they'll be re-fetched
+// next time they're needed. With no argument, forgets all of them.
+export async function clearStreams(actIds?: number[]): Promise<void> {
+  if (actIds === undefined) {
+    streamsCache.clear();
+    await deleteKeysWithPrefix(db, "streams/");
+  } else {
+    actIds.forEach((actId) => streamsCache.delete(actId));
+    await Promise.all(actIds.map((actId) => streamsItem(actId).remove()));
+  }
 }

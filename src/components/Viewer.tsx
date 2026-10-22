@@ -1,8 +1,9 @@
+import _ from "lodash";
 import { useEffect, useMemo, useState } from "react";
 
 import { Act } from "../Act";
 import { StravaStreamSet, StravaSummaryActivity } from "../stravaApi";
-import { getStreams } from "../streams";
+import { clearStreams, getStreams } from "../streams";
 import { useLocalStorageState } from "../useLocalStorageState";
 import "./Viewer.css";
 import { ViewerMap } from "./ViewerMap";
@@ -97,14 +98,15 @@ export function Viewer({
     }
   }, [visibleActs, selectedActId]);
 
-  function syncFromSelected() {
+  async function syncFromSelected() {
     const selectedAct = acts.find((act) => act.data.id === selectedActId);
     if (!selectedAct) return;
-    setActData(
-      actData.filter(
-        (data) => new Date(data.start_date) < selectedAct.startDate,
-      ),
+    const [kept, dropped] = _.partition(
+      actData,
+      (data) => new Date(data.start_date) < selectedAct.startDate,
     );
+    await clearStreams(dropped.map((data) => data.id));
+    setActData(kept);
     sync({ fromScratch: false });
   }
 
